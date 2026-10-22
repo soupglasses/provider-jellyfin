@@ -14,6 +14,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   provider:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,26 +28,59 @@ jobs:
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
         with:
           driver: docker-container
-      - name: Build and cache controller images
+      - name: Build cached amd64 controller image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           target: runtime
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha,scope=provider
-          cache-to: type=gha,mode=max,scope=provider
-      - name: Build native package
+          platforms: linux/amd64
+          load: true
+          tags: provider-jellyfin:amd64-development
+          cache-from: |
+            type=gha,scope=provider-amd64
+            type=gha,scope=provider
+          cache-to: type=gha,mode=max,scope=provider-amd64
+      - name: Build cached arm64 controller image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runtime
+          platforms: linux/arm64
+          load: true
+          tags: provider-jellyfin:arm64-development
+          cache-from: |
+            type=gha,scope=provider-arm64
+            type=gha,scope=provider
+          cache-to: type=gha,mode=max,scope=provider-arm64
+      - name: Build native package from verified images
         run: |
-          bash build.sh /tmp/provider-jellyfin-amd64.xpkg linux/amd64
-          bash build.sh /tmp/provider-jellyfin-arm64.xpkg linux/arm64
-      - name: Verify generated schemas are reproducible
+          for arch in amd64 arm64; do
+            crossplane xpkg build --package-root package --embed-runtime-image "provider-jellyfin:$arch-development" --package-file "/tmp/provider-jellyfin-$arch.xpkg"
+          done
+      - name: Export cached generated files
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: generated
+          outputs: type=local,dest=/tmp/jellyfin-generated
+          cache-from: |
+            type=gha,scope=provider-amd64
+            type=gha,scope=provider
+      - name: Export cached coverage
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: coverage
+          outputs: type=local,dest=/tmp/coverage
+          cache-from: |
+            type=gha,scope=provider-amd64
+            type=gha,scope=provider
+      - name: Verify generated files are reproducible
         run: |
-          docker buildx build --target generated --output type=local,dest=/tmp/jellyfin-generated .
           diff -r package/crds /tmp/jellyfin-generated/generated/crds
           diff -r apis /tmp/jellyfin-generated/apis
           diff -r internal/controller /tmp/jellyfin-generated/internal/controller
           diff config/schema.json /tmp/jellyfin-generated/generated/schema.json
-          docker buildx build --target coverage --output type=local,dest=/tmp/coverage .
       - name: Verify native Jellyfin reconciliation
         env:
           PROVIDER_PACKAGE: /tmp/provider-jellyfin-amd64.xpkg
@@ -65,6 +99,7 @@ jobs:
           path: /tmp/provider-jellyfin-*.xpkg
           if-no-files-found: error
   publish:
+    timeout-minutes: 10
     needs: provider
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref,
       'refs/tags/v'))
