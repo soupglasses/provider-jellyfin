@@ -6,10 +6,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	configapi "github.com/ThePhaseless/terraform-provider-jellyfin/crossplane/apis/namespaced/v1beta1"
 	localconfig "github.com/ThePhaseless/terraform-provider-jellyfin/crossplane/config"
 	xpresource "github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/upjet/v2/pkg/terraform"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,7 +54,12 @@ func setup(ctx context.Context, k client.Client, resource xpresource.Managed) (t
 	if username == "" {
 		return terraform.Setup{}, fmt.Errorf("administrator username missing or empty")
 	}
-	return terraform.Setup{FrameworkProvider: localconfig.FrameworkProvider(), Configuration: terraform.ProviderConfiguration{
+	policies := resource.GetManagementPolicies()
+	allowBootstrap := resource.GetDeletionTimestamp() == nil &&
+		(slices.Contains(policies, xpv2.ManagementActionAll) || slices.Contains(policies, xpv2.ManagementActionCreate))
+	return terraform.Setup{FrameworkProvider: &resourceProvider{
+		Provider: localconfig.FrameworkProvider(), deviceID: "crossplane-" + string(resource.GetUID()), allowBootstrap: allowBootstrap,
+	}, Configuration: terraform.ProviderConfiguration{
 		"endpoint": pc.Spec.Endpoint, "username": username, "password": string(password),
 	}}, nil
 }

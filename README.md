@@ -68,6 +68,9 @@ namespace. Configure a namespaced ProviderConfig with the server endpoint and
 local credential references. On an empty server, the embedded Terraform provider
 creates the initial administrator and completes setup. Existing servers authenticate
 without recreating accounts or resetting passwords.
+Initial setup requires a resource that permits Create; Observe-only resources fail
+without changing an uninitialized server. Resource sessions use separate device IDs
+so concurrent controllers do not invalidate each other's credentials.
 
 Start adoption with `[Observe]`, confirm the intended objects, then enable
 `[Observe, Create, Update]` after stopping other settings writers. Excluding Delete
