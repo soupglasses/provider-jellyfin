@@ -62,7 +62,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	pipeline.Run(localconfig.WithSchema(raw, "jellyfin.cluster.ops.finnes.dev"), localconfig.WithSchema(raw, "jellyfin.ops.finnes.dev"), root)
+	pipeline.Run(localconfig.WithSchema(raw, "jellyfin.cluster.finnes.dev"), localconfig.WithSchema(raw, "jellyfin.finnes.dev"), root)
 	for _, scope := range []string{"cluster", "namespaced"} {
 		path := filepath.Join(root, "apis", scope, "jellyfin", "v1alpha1", "zz_pluginconfiguration_types.go")
 		if err := allowInitialSecret(path); err != nil {

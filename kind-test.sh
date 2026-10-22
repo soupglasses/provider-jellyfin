@@ -98,14 +98,14 @@ for verb in get list create update delete; do
     expect_permission yes "$verb" secrets --all-namespaces
 done
 identity=system:serviceaccount:crossplane-system:crossplane
-for resource in secrets pluginconfigurations.jellyfin.ops.finnes.dev; do
+for resource in secrets pluginconfigurations.jellyfin.finnes.dev; do
     for verb in get list watch create update patch delete; do
         expect_permission yes "$verb" "$resource" --namespace media
     done
 done
 for resource in providerconfigs brandingconfigurations libraries networkingconfigurations \
     pluginconfigurations pluginrepositories plugins scheduledtasks systemconfigurations; do
-    scope=$(kubectl get crd "$resource.jellyfin.ops.finnes.dev" --output jsonpath='{.spec.scope}')
+    scope=$(kubectl get crd "$resource.jellyfin.finnes.dev" --output jsonpath='{.spec.scope}')
     if [[ "$scope" != Namespaced ]]; then
         printf 'ERROR: expected namespaced %s API; got %s\n' "$resource" "$scope" >&2
         failed=1

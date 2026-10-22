@@ -3,18 +3,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: scheduledtasks.jellyfin.ops.finnes.dev
+  name: brandingconfigurations.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
       - managed
       - jellyfin
-    kind: ScheduledTask
-    listKind: ScheduledTaskList
-    plural: scheduledtasks
-    singular: scheduledtask
+    kind: BrandingConfiguration
+    listKind: BrandingConfigurationList
+    plural: brandingconfigurations
+    singular: brandingconfiguration
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
       name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: ScheduledTask is the Schema for the ScheduledTasks API. <no value>
+          description: BrandingConfiguration is the Schema for the BrandingConfigurations API. <no value>
           properties:
             apiVersion:
               description: |-
@@ -53,42 +53,24 @@ spec:
             metadata:
               type: object
             spec:
-              description: ScheduledTaskSpec defines the desired state of ScheduledTask
+              description: BrandingConfigurationSpec defines the desired state of BrandingConfiguration
               properties:
                 forProvider:
                   properties:
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
+                    customCss:
+                      description: Custom CSS content.
                       type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
+                    loginDisclaimer:
+                      description: The login disclaimer text.
+                      type: string
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
+                      type: string
                   type: object
                 initProvider:
                   description: |-
@@ -103,38 +85,20 @@ spec:
                     for example because of an external controller is managing them, like an
                     autoscaler.
                   properties:
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
+                    customCss:
+                      description: Custom CSS content.
                       type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
+                    loginDisclaimer:
+                      description: The login disclaimer text.
+                      type: string
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
+                      type: string
                   type: object
                 managementPolicies:
                   default:
@@ -194,50 +158,27 @@ spec:
               required:
                 - forProvider
               type: object
-              x-kubernetes-validations:
-                - message: spec.forProvider.triggers is a required parameter
-                  rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
-                    ''Update'' in self.managementPolicies) || has(self.forProvider.triggers) || (has(self.initProvider)
-                    && has(self.initProvider.triggers))'
             status:
-              description: ScheduledTaskStatus defines the observed state of ScheduledTask.
+              description: BrandingConfigurationStatus defines the observed state of BrandingConfiguration.
               properties:
                 atProvider:
                   properties:
+                    customCss:
+                      description: Custom CSS content.
+                      type: string
                     id:
                       type: string
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
+                    loginDisclaimer:
+                      description: The login disclaimer text.
                       type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
+                      type: string
                   type: object
                 conditions:
                   description: Conditions of the resource.
