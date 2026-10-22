@@ -34,9 +34,32 @@ Secret rotation, settings updates, drift correction, controller restarts and
 orphan/adopt/delete policies while preserving unrelated server state.
 Set `JELLYFIN_TEST_IMAGE` to test a local Jellyfin image.
 
-Generated APIs and CRDs are committed. Run `bash generate.sh` with the tools pinned
-in the Dockerfile, and copy `generated/crds/` into `package/crds/`. CI checks that
-these files reproduce and runs controller and connector behavior tests.
+Generated APIs, controllers, CRDs and the Terraform schema are committed. To regenerate
+with the tools pinned in the Dockerfile:
+
+```sh
+docker buildx build --target generated --output type=local,dest=. .
+```
+
+With those tools installed locally, `bash generate.sh` updates the same files directly.
+Upjet generates both scopes; the script discards cluster APIs and controllers because
+this provider serves only namespaced resources. CI checks generation reproducibility
+and runs controller and connector behavior tests.
+
+## Development
+
+Keep application behavior in the embedded Terraform provider and packaging concerns
+here. Commit generated files alongside source changes so Go tooling can resolve imports.
+Generated files use [`.gitattributes`](.gitattributes) to
+[collapse their diffs on GitHub](https://docs.github.com/en/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github).
+
+CI publishes commit-qualified main packages after unit and native-package tests.
+A semantic `v*` tag on main publishes a multiarchitecture package and release checksums.
+Never move release tags; publish a new version instead.
+
+Renovate groups Go dependency updates to preserve Kubernetes client compatibility.
+It also updates Actions, build tools, container digests and native test dependencies.
+Dependency upgrades pass the same behavior checks as other changes.
 
 ## Configuration and adoption
 

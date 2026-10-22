@@ -45,11 +45,12 @@ server = "http://$registry_address"
 CONFIG
 crossplane xpkg push --insecure-skip-tls-verify --package-files "$package_file" \
     "$registry_address/provider-jellyfin:v0.1.0"
+psa_version=$(kubectl version --output json | python3 -c 'import json, sys; v = json.load(sys.stdin)["serverVersion"]; print("v" + v["major"] + "." + v["minor"].rstrip("+"))')
 for namespace in crossplane-system media; do
     kubectl create namespace "$namespace"
     kubectl label namespace "$namespace" \
         pod-security.kubernetes.io/enforce=restricted \
-        pod-security.kubernetes.io/enforce-version=v1.34
+        pod-security.kubernetes.io/enforce-version="$psa_version"
 done
 helm upgrade --install crossplane crossplane --repo https://charts.crossplane.io/stable \
     --version 2.4.2 --namespace crossplane-system \
