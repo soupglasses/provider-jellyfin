@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	localconfig "github.com/ThePhaseless/terraform-provider-jellyfin/crossplane/config"
@@ -62,4 +63,29 @@ func main() {
 		panic(err)
 	}
 	pipeline.Run(localconfig.WithSchema(raw, "jellyfin.cluster.ops.finnes.dev"), localconfig.WithSchema(raw, "jellyfin.ops.finnes.dev"), root)
+	for _, scope := range []string{"cluster", "namespaced"} {
+		path := filepath.Join(root, "apis", scope, "jellyfin", "v1alpha1", "zz_pluginconfiguration_types.go")
+		if err := allowInitialSecret(path); err != nil {
+			panic(err)
+		}
+	}
+}
+
+// Upjet omits sensitive fields from TF structs, so its required-field rule
+// overlooks the initProvider Secret selector even though the connector reads it.
+func allowInitialSecret(path string) error {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	const required = `has(self.forProvider.configurationJsonSecretRef)`
+	const alternative = required + ` || (has(self.initProvider) && has(self.initProvider.configurationJsonSecretRef))`
+	text := string(raw)
+	if strings.Contains(text, alternative) {
+		return nil
+	}
+	if strings.Count(text, required) != 1 {
+		return fmt.Errorf("unexpected PluginConfiguration validation in %s", path)
+	}
+	return os.WriteFile(path, []byte(strings.Replace(text, required, alternative, 1)), 0600)
 }

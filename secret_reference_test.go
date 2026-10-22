@@ -61,26 +61,35 @@ func TestPluginSecretReferenceWithAPIClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	obj := &api.PluginConfiguration{ObjectMeta: metav1.ObjectMeta{Name: "plugin", Namespace: "media", UID: "plugin"}}
-	obj.Spec.ForProvider.ConfigurationJSONSecretRef = &xpv2.LocalSecretKeySelector{
-		LocalSecretReference: xpv2.LocalSecretReference{Name: "settings"}, Key: "json",
-	}
-	meta.SetExternalName(obj, "plugin")
-	setup := func(context.Context, client.Client, xpresource.Managed) (terraform.Setup, error) {
-		return terraform.Setup{FrameworkProvider: localconfig.FrameworkProvider(), Configuration: terraform.ProviderConfiguration{"endpoint": server.URL, "api_key": "synthetic"}}, nil
-	}
-	connector := controller.NewTerraformPluginFrameworkConnector(kube, setup,
-		localconfig.Namespaced().Resources["jellyfin_plugin_configuration"], controller.NewOperationStore(logging.NewNopLogger()),
-		controller.WithTerraformPluginFrameworkLogger(logging.NewNopLogger()))
-	external, err := connector.Connect(t.Context(), obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	observed, err := external.Observe(t.Context(), obj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !observed.ResourceExists || observed.ResourceUpToDate {
-		t.Fatalf("expected adopted plugin with drift from the referenced Secret: %+v", observed)
+	for _, placement := range []string{"forProvider", "initProvider"} {
+		t.Run(placement, func(t *testing.T) {
+			obj := &api.PluginConfiguration{ObjectMeta: metav1.ObjectMeta{Name: "plugin", Namespace: "media", UID: "plugin"}}
+			selector := &xpv2.LocalSecretKeySelector{
+				LocalSecretReference: xpv2.LocalSecretReference{Name: "settings"}, Key: "json",
+			}
+			if placement == "initProvider" {
+				obj.Spec.InitProvider.ConfigurationJSONSecretRef = selector
+			} else {
+				obj.Spec.ForProvider.ConfigurationJSONSecretRef = selector
+			}
+			meta.SetExternalName(obj, "plugin")
+			setup := func(context.Context, client.Client, xpresource.Managed) (terraform.Setup, error) {
+				return terraform.Setup{FrameworkProvider: localconfig.FrameworkProvider(), Configuration: terraform.ProviderConfiguration{"endpoint": server.URL, "api_key": "synthetic"}}, nil
+			}
+			connector := controller.NewTerraformPluginFrameworkConnector(kube, setup,
+				localconfig.Namespaced().Resources["jellyfin_plugin_configuration"], controller.NewOperationStore(logging.NewNopLogger()),
+				controller.WithTerraformPluginFrameworkLogger(logging.NewNopLogger()))
+			external, err := connector.Connect(t.Context(), obj)
+			if err != nil {
+				t.Fatal(err)
+			}
+			observed, err := external.Observe(t.Context(), obj)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !observed.ResourceExists || observed.ResourceUpToDate {
+				t.Fatalf("expected adopted plugin with drift from the referenced Secret: %+v", observed)
+			}
+		})
 	}
 }
