@@ -159,7 +159,8 @@ spec:
               x-kubernetes-validations:
                 - message: spec.forProvider.configurationJsonSecretRef is a required parameter
                   rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
-                    ''Update'' in self.managementPolicies) || has(self.forProvider.configurationJsonSecretRef)'
+                    ''Update'' in self.managementPolicies) || has(self.forProvider.configurationJsonSecretRef)
+                    || (has(self.initProvider) && has(self.initProvider.configurationJsonSecretRef))'
             status:
               description: PluginConfigurationStatus defines the observed state of PluginConfiguration.
               properties:

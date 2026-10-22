@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build bash generate.sh && \
     cp "$(go list -m -f '{{.Dir}}' github.com/ThePhaseless/terraform-provider-jellyfin)/LICENSE" /tmp/terraform-provider-LICENSE
 
 FROM generate AS unit-tests
-RUN --mount=type=cache,target=/root/.cache/go-build go test -buildvcs=false -p=2 -coverprofile=/tmp/coverage.out . ./cmd/provider
+RUN --mount=type=cache,target=/root/.cache/go-build go test -buildvcs=false -p=2 -coverprofile=/tmp/coverage.out . ./cmd/provider ./cmd/generate
 
 FROM unit-tests AS build
 ARG TARGETOS
