@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MPL-2.0
 set -euo pipefail
-repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
-cluster="ops-jellyfin-test-$$"
+repo_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+cluster="provider-jellyfin-test-$$"
 registry="${cluster}-registry"
 work_dir=$(mktemp -d)
 export KUBECONFIG="$work_dir/kubeconfig"
@@ -57,8 +57,7 @@ helm upgrade --install crossplane crossplane --repo https://charts.crossplane.io
     --set-json 'securityContextRBACManager={"runAsNonRoot":true,"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"seccompProfile":{"type":"RuntimeDefault"}}' \
     --wait --timeout 4m
 # Rewrite the package before creation so the test never contacts the production registry.
-kubectl create --dry-run=client --filename "$repo_dir/kubernetes/apps/crossplane-system/crossplane/providers/jellyfin/provider.yaml" \
-    --filename "$repo_dir/kubernetes/apps/crossplane-system/crossplane/providers/jellyfin/deploymentruntimeconfig.yaml" \
+kubectl create --dry-run=client --filename "$repo_dir/tests/provider.yaml" \
     --output json >"$work_dir/provider.json"
 python3 - "$work_dir/provider.json" "$registry_address" <<'PY'
 import json
@@ -69,7 +68,7 @@ items = []
 decoder = json.JSONDecoder()
 while remaining:
     item, end = decoder.raw_decode(remaining)
-    items.append(item)
+    items.extend(item['items'] if item.get('kind') == 'List' else [item])
     remaining = remaining[end:].lstrip()
 resources = {'apiVersion': 'v1', 'kind': 'List', 'items': items}
 for item in items:
@@ -125,4 +124,4 @@ if [[ -n "${TEST_ARTIFACTS_DIR:-}" ]]; then
 fi
 ((failed == 0))
 printf 'Native Jellyfin provider installed under restricted PSA; APIs are namespaced, controller watches media, and Crossplane supplies the provider and composition permissions.\n'
-python3 "$repo_dir/packages/provider-jellyfin/tests/verify_kind_reconciliation.py"
+python3 "$repo_dir/tests/verify_kind_reconciliation.py"

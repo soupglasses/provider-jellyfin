@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MPL-2.0
 set -euo pipefail
 cd "$(dirname "$0")"
 go run -buildvcs=false ./cmd/generate

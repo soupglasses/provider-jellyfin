@@ -1,11 +1,17 @@
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MPL-2.0
 generated
 bin
 *.log
-apis/cluster
-apis/namespaced/jellyfin
-apis/namespaced/zz_register.go
-apis/namespaced/v1beta1/zz_*
-internal/controller
 examples-generated
+.git
+.github
+README.md
+CONTRIBUTING.md
+renovate.json5
+.mise.toml
+tests
+kind-test.sh
+build.sh
+package
+__pycache__
