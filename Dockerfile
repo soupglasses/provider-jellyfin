@@ -4,7 +4,7 @@ FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23@sha256:754d5200fc3edae76
 WORKDIR /src
 RUN apk add --no-cache bash && \
     go install golang.org/x/tools/cmd/goimports@v0.52.0 && \
-    go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.20.1 && \
+    go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.23.0 && \
     go install github.com/crossplane/crossplane-tools/cmd/angryjet@v0.0.0-20260719180100-659f1dc036c5 && \
     go install github.com/google/yamlfmt/cmd/yamlfmt@v0.21.0
 COPY go.mod go.sum ./
