@@ -77,10 +77,10 @@ jobs:
             type=gha,scope=provider
       - name: Verify generated files are reproducible
         run: |
-          diff -r package/crds /tmp/jellyfin-generated/generated/crds
+          diff -r package/crds /tmp/jellyfin-generated/package/crds
           diff -r apis /tmp/jellyfin-generated/apis
           diff -r internal/controller /tmp/jellyfin-generated/internal/controller
-          diff config/schema.json /tmp/jellyfin-generated/generated/schema.json
+          diff config/schema.json /tmp/jellyfin-generated/config/schema.json
       - name: Verify native Jellyfin reconciliation
         env:
           PROVIDER_PACKAGE: /tmp/provider-jellyfin-amd64.xpkg

@@ -22,8 +22,8 @@ ARG TARGETARCH
 RUN --mount=type=cache,target=/root/.cache/go-build CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -buildvcs=false -p=2 -o /out/provider ./cmd/provider
 
 FROM scratch AS generated
-COPY --from=generate /src/generated/crds /generated/crds
-COPY --from=generate /src/config/schema.json /generated/schema.json
+COPY --from=generate /src/package/crds /package/crds
+COPY --from=generate /src/config/schema.json /config/schema.json
 COPY --from=generate /src/apis /apis
 COPY --from=generate /src/internal/controller /internal/controller
 
