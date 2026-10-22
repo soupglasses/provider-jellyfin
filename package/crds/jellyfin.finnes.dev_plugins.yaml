@@ -3,18 +3,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: brandingconfigurations.jellyfin.ops.finnes.dev
+  name: plugins.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
       - managed
       - jellyfin
-    kind: BrandingConfiguration
-    listKind: BrandingConfigurationList
-    plural: brandingconfigurations
-    singular: brandingconfiguration
+    kind: Plugin
+    listKind: PluginList
+    plural: plugins
+    singular: plugin
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
       name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: BrandingConfiguration is the Schema for the BrandingConfigurations API. <no value>
+          description: Plugin is the Schema for the Plugins API. <no value>
           properties:
             apiVersion:
               description: |-
@@ -53,23 +53,25 @@ spec:
             metadata:
               type: object
             spec:
-              description: BrandingConfigurationSpec defines the desired state of BrandingConfiguration
+              description: PluginSpec defines the desired state of Plugin
               properties:
                 forProvider:
                   properties:
-                    customCss:
-                      description: Custom CSS content.
+                    repositoryUrl:
+                      description: The repository URL from which to install the plugin. Required when
+                        creating the resource and resolved automatically on import when the exact package
+                        version is still available.
                       type: string
-                    loginDisclaimer:
-                      description: The login disclaimer text.
-                      type: string
-                    splashscreenEnabled:
-                      description: Whether the splash screen is enabled.
-                      type: boolean
-                    splashscreenLocation:
-                      description: The splash screen location. Jellyfin ignores a splash screen location
-                        in the branding configuration, so setting it is an error. The attribute will be
-                        removed in a future release.
+                    version:
+                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
+                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
+                        this provider was tested against). A keyword is resolved only at install or when
+                        set, stays in state as written, and accepts any version installed later. Omitted,
+                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
+                        tracks `installed_version`, as it also does after a keyword is removed. A version
+                        is a minimum while automatic plugin updates are on, else exact; see the resource
+                        description. Changing it reinstalls the plugin, replacing the resource, unless
+                        the installed version already satisfies the new value.
                       type: string
                   type: object
                 initProvider:
@@ -85,19 +87,21 @@ spec:
                     for example because of an external controller is managing them, like an
                     autoscaler.
                   properties:
-                    customCss:
-                      description: Custom CSS content.
+                    repositoryUrl:
+                      description: The repository URL from which to install the plugin. Required when
+                        creating the resource and resolved automatically on import when the exact package
+                        version is still available.
                       type: string
-                    loginDisclaimer:
-                      description: The login disclaimer text.
-                      type: string
-                    splashscreenEnabled:
-                      description: Whether the splash screen is enabled.
-                      type: boolean
-                    splashscreenLocation:
-                      description: The splash screen location. Jellyfin ignores a splash screen location
-                        in the branding configuration, so setting it is an error. The attribute will be
-                        removed in a future release.
+                    version:
+                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
+                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
+                        this provider was tested against). A keyword is resolved only at install or when
+                        set, stays in state as written, and accepts any version installed later. Omitted,
+                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
+                        tracks `installed_version`, as it also does after a keyword is removed. A version
+                        is a minimum while automatic plugin updates are on, else exact; see the resource
+                        description. Changing it reinstalls the plugin, replacing the resource, unless
+                        the installed version already satisfies the new value.
                       type: string
                   type: object
                 managementPolicies:
@@ -159,25 +163,42 @@ spec:
                 - forProvider
               type: object
             status:
-              description: BrandingConfigurationStatus defines the observed state of BrandingConfiguration.
+              description: PluginStatus defines the observed state of Plugin.
               properties:
                 atProvider:
                   properties:
-                    customCss:
-                      description: Custom CSS content.
-                      type: string
                     id:
                       type: string
-                    loginDisclaimer:
-                      description: The login disclaimer text.
+                    installedVersion:
+                      description: The version Jellyfin lists for the plugin, which can be newer than
+                        `version` while automatic plugin updates are on. While an update waits for a restart,
+                        this keeps the previous version, whose `status` reads `Superseded`. A version
+                        Jellyfin deletes at the next restart is ignored.
                       type: string
-                    splashscreenEnabled:
-                      description: Whether the splash screen is enabled.
-                      type: boolean
-                    splashscreenLocation:
-                      description: The splash screen location. Jellyfin ignores a splash screen location
-                        in the branding configuration, so setting it is an error. The attribute will be
-                        removed in a future release.
+                    repositoryUrl:
+                      description: The repository URL from which to install the plugin. Required when
+                        creating the resource and resolved automatically on import when the exact package
+                        version is still available.
+                      type: string
+                    status:
+                      description: 'The status Jellyfin lists for `installed_version`: `Active` (loaded),
+                        `Restart` (waiting for a restart to load), `Superseded` (a newer version waits
+                        for a restart to replace it), `Disabled` (disabled on the dashboard''s Plugins
+                        page), `NotSupported` (built for another Jellyfin version, so not loaded) or `Malfunctioned`
+                        (failed to load; the server log says why). Creating the resource fails if the
+                        version it installed is `NotSupported` or `Malfunctioned`, and the next apply
+                        replaces the tainted plugin.'
+                      type: string
+                    version:
+                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
+                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
+                        this provider was tested against). A keyword is resolved only at install or when
+                        set, stays in state as written, and accepts any version installed later. Omitted,
+                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
+                        tracks `installed_version`, as it also does after a keyword is removed. A version
+                        is a minimum while automatic plugin updates are on, else exact; see the resource
+                        description. Changing it reinstalls the plugin, replacing the resource, unless
+                        the installed version already satisfies the new value.
                       type: string
                   type: object
                 conditions:

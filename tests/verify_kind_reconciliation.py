@@ -152,7 +152,7 @@ try:
     )
     apply(
         {
-            "apiVersion": "jellyfin.ops.finnes.dev/v1beta1",
+            "apiVersion": "jellyfin.finnes.dev/v1beta1",
             "kind": "ProviderConfig",
             "metadata": {"name": "kind-fixture"},
             "spec": {
@@ -163,7 +163,7 @@ try:
         }
     )
     resource = {
-        "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
+        "apiVersion": "jellyfin.finnes.dev/v1alpha1",
         "kind": "SystemConfiguration",
         "metadata": {
             "name": "kind-fixture",
@@ -248,7 +248,7 @@ try:
     )
     apply(
         {
-            "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
+            "apiVersion": "jellyfin.finnes.dev/v1alpha1",
             "kind": "PluginConfiguration",
             "metadata": {
                 "name": "kind-plugin",
@@ -276,7 +276,7 @@ try:
     assert api(plugin_path) == plugin_baseline, "Observe changed plugin configuration"
     def managed(kind, name, external, desired, policies=None):
         value = {
-            "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
+            "apiVersion": "jellyfin.finnes.dev/v1alpha1",
             "kind": kind,
             "metadata": {
                 "name": name,

@@ -3,18 +3,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: plugins.jellyfin.ops.finnes.dev
+  name: pluginrepositories.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
       - managed
       - jellyfin
-    kind: Plugin
-    listKind: PluginList
-    plural: plugins
-    singular: plugin
+    kind: PluginRepository
+    listKind: PluginRepositoryList
+    plural: pluginrepositories
+    singular: pluginrepository
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
       name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: Plugin is the Schema for the Plugins API. <no value>
+          description: PluginRepository is the Schema for the PluginRepositorys API. <no value>
           properties:
             apiVersion:
               description: |-
@@ -53,25 +53,15 @@ spec:
             metadata:
               type: object
             spec:
-              description: PluginSpec defines the desired state of Plugin
+              description: PluginRepositorySpec defines the desired state of PluginRepository
               properties:
                 forProvider:
                   properties:
-                    repositoryUrl:
-                      description: The repository URL from which to install the plugin. Required when
-                        creating the resource and resolved automatically on import when the exact package
-                        version is still available.
-                      type: string
-                    version:
-                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
-                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
-                        this provider was tested against). A keyword is resolved only at install or when
-                        set, stays in state as written, and accepts any version installed later. Omitted,
-                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
-                        tracks `installed_version`, as it also does after a keyword is removed. A version
-                        is a minimum while automatic plugin updates are on, else exact; see the resource
-                        description. Changing it reinstalls the plugin, replacing the resource, unless
-                        the installed version already satisfies the new value.
+                    enabled:
+                      description: Whether the repository is enabled.
+                      type: boolean
+                    name:
+                      description: The repository name.
                       type: string
                   type: object
                 initProvider:
@@ -87,21 +77,11 @@ spec:
                     for example because of an external controller is managing them, like an
                     autoscaler.
                   properties:
-                    repositoryUrl:
-                      description: The repository URL from which to install the plugin. Required when
-                        creating the resource and resolved automatically on import when the exact package
-                        version is still available.
-                      type: string
-                    version:
-                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
-                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
-                        this provider was tested against). A keyword is resolved only at install or when
-                        set, stays in state as written, and accepts any version installed later. Omitted,
-                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
-                        tracks `installed_version`, as it also does after a keyword is removed. A version
-                        is a minimum while automatic plugin updates are on, else exact; see the resource
-                        description. Changing it reinstalls the plugin, replacing the resource, unless
-                        the installed version already satisfies the new value.
+                    enabled:
+                      description: Whether the repository is enabled.
+                      type: boolean
+                    name:
+                      description: The repository name.
                       type: string
                   type: object
                 managementPolicies:
@@ -162,43 +142,23 @@ spec:
               required:
                 - forProvider
               type: object
+              x-kubernetes-validations:
+                - message: spec.forProvider.name is a required parameter
+                  rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
+                    ''Update'' in self.managementPolicies) || has(self.forProvider.name) || (has(self.initProvider)
+                    && has(self.initProvider.name))'
             status:
-              description: PluginStatus defines the observed state of Plugin.
+              description: PluginRepositoryStatus defines the observed state of PluginRepository.
               properties:
                 atProvider:
                   properties:
+                    enabled:
+                      description: Whether the repository is enabled.
+                      type: boolean
                     id:
                       type: string
-                    installedVersion:
-                      description: The version Jellyfin lists for the plugin, which can be newer than
-                        `version` while automatic plugin updates are on. While an update waits for a restart,
-                        this keeps the previous version, whose `status` reads `Superseded`. A version
-                        Jellyfin deletes at the next restart is ignored.
-                      type: string
-                    repositoryUrl:
-                      description: The repository URL from which to install the plugin. Required when
-                        creating the resource and resolved automatically on import when the exact package
-                        version is still available.
-                      type: string
-                    status:
-                      description: 'The status Jellyfin lists for `installed_version`: `Active` (loaded),
-                        `Restart` (waiting for a restart to load), `Superseded` (a newer version waits
-                        for a restart to replace it), `Disabled` (disabled on the dashboard''s Plugins
-                        page), `NotSupported` (built for another Jellyfin version, so not loaded) or `Malfunctioned`
-                        (failed to load; the server log says why). Creating the resource fails if the
-                        version it installed is `NotSupported` or `Malfunctioned`, and the next apply
-                        replaces the tainted plugin.'
-                      type: string
-                    version:
-                      description: The version to install, as the repository lists it (e.g. `13.0.0.0`),
-                        or `latest` (the newest offered) or `supported` (the Jellyfin Security release
-                        this provider was tested against). A keyword is resolved only at install or when
-                        set, stays in state as written, and accepts any version installed later. Omitted,
-                        it installs as `supported` for Jellyfin Security and `latest` otherwise, then
-                        tracks `installed_version`, as it also does after a keyword is removed. A version
-                        is a minimum while automatic plugin updates are on, else exact; see the resource
-                        description. Changing it reinstalls the plugin, replacing the resource, unless
-                        the installed version already satisfies the new value.
+                    name:
+                      description: The repository name.
                       type: string
                   type: object
                 conditions:

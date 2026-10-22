@@ -3,9 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: networkingconfigurations.jellyfin.ops.finnes.dev
+  name: networkingconfigurations.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
