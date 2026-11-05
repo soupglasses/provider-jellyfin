@@ -12,16 +12,24 @@
   ],
   "packageRules": [
     {
-      // The pinned fork includes fixes after v0.6.0; that tag would remove them.
+      // This require is replaced: changing it does not update the embedded code.
       "matchManagers": ["gomod"],
-      "matchPackageNames": ["github.com/soupglasses/terraform-provider-jellyfin"],
-      "allowedVersions": ">=0.6.1"
+      "matchPackageNames": ["github.com/ThePhaseless/terraform-provider-jellyfin"],
+      "enabled": false
     },
     {
       "matchManagers": [
         "gomod"
       ],
       "groupName": "Go dependencies"
+    },
+    {
+      // The maintained fork's main includes the ownership patch. Upstream tags
+      // inherited by the fork do not, so consume main pseudo-versions only.
+      "matchManagers": ["gomod"],
+      "matchPackageNames": ["github.com/soupglasses/terraform-provider-jellyfin"],
+      "allowedVersions": "/-[0-9]{14}-[0-9a-f]{12}$/",
+      "groupName": "Jellyfin Terraform fork"
     },
     {
       "matchManagers": [
@@ -34,7 +42,7 @@
     {
       "customType": "regex",
       "managerFilePatterns": ["/^tests/jellyfin-image\\.txt$/"],
-      "matchStrings": ["(?<depName>jellyfin/jellyfin):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+      "matchStrings": ["(?<depName>ghcr.io/soupglasses/ops/jellyfin-runtime):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
       "datasourceTemplate": "docker"
     },
     {

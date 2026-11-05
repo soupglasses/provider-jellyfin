@@ -1,1 +1,1 @@
-jellyfin/jellyfin:12.2@sha256:357724bf0ae27a672c7cbaa899db2d9abeb13dbd8657ccce750258a4c059d037
+ghcr.io/soupglasses/ops/jellyfin-runtime:12.4@sha256:d21bc07e8bea1279ee084e03d0a0731de02a9ad67d4fce3b85a1d8ad5b2a5313

@@ -10,6 +10,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+import uuid
 
 
 def kube(*args, value=None):
@@ -152,7 +153,7 @@ try:
     )
     apply(
         {
-            "apiVersion": "jellyfin.finnes.dev/v1beta1",
+            "apiVersion": "jellyfin.ops.finnes.dev/v1beta1",
             "kind": "ProviderConfig",
             "metadata": {"name": "kind-fixture"},
             "spec": {
@@ -163,7 +164,7 @@ try:
         }
     )
     resource = {
-        "apiVersion": "jellyfin.finnes.dev/v1alpha1",
+        "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
         "kind": "SystemConfiguration",
         "metadata": {
             "name": "kind-fixture",
@@ -248,7 +249,7 @@ try:
     )
     apply(
         {
-            "apiVersion": "jellyfin.finnes.dev/v1alpha1",
+            "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
             "kind": "PluginConfiguration",
             "metadata": {
                 "name": "kind-plugin",
@@ -276,7 +277,7 @@ try:
     assert api(plugin_path) == plugin_baseline, "Observe changed plugin configuration"
     def managed(kind, name, external, desired, policies=None):
         value = {
-            "apiVersion": "jellyfin.finnes.dev/v1alpha1",
+            "apiVersion": "jellyfin.ops.finnes.dev/v1alpha1",
             "kind": kind,
             "metadata": {
                 "name": name,
@@ -353,6 +354,32 @@ try:
         if key != setting:
             assert api(plugin_path)[key] == value, "unmanaged plugin configuration changed: " + key
 
+    # Use the same LDAP-Auth plugin as production and rotate its bind credential.
+    ldap_id = "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
+    ldap = next(item for item in api("/Plugins") if uuid.UUID(item["Id"]) == uuid.UUID(ldap_id))
+    assert ldap["Status"] == "Active", "LDAP-Auth is not compatible with the runtime"
+    ldap_path = "/Plugins/" + ldap_id + "/Configuration"
+    ldap_baseline = api(ldap_path)
+    apply({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "kind-ldap-settings"},
+           "stringData": {"configuration.json": json.dumps({
+               "LdapServer": "ldap.fixture.invalid", "LdapBindPassword": "initial-fixture-password",
+           })}})
+    resources.append(managed("PluginConfiguration", "ldap", ldap_id, {
+        "configurationJsonSecretRef": {"name": "kind-ldap-settings", "key": "configuration.json"},
+    }))
+    eventually(lambda: api(ldap_path).get("LdapBindPassword") == "initial-fixture-password",
+               "LDAP bind configuration did not reconcile")
+    # Omitting a previously managed setting releases it without clearing it.
+    apply({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "kind-ldap-settings"},
+           "stringData": {"configuration.json": json.dumps({"LdapBindPassword": "rotated-fixture-password"})}})
+    eventually(lambda: api(ldap_path).get("LdapBindPassword") == "rotated-fixture-password",
+               "LDAP bind Secret rotation did not reconcile")
+    assert api(ldap_path)["LdapServer"] == "ldap.fixture.invalid", "released LDAP setting was reset"
+    for key, value in ldap_baseline.items():
+        if key not in ("LdapServer", "LdapBindPassword"):
+            assert api(ldap_path).get(key) == value, "unmanaged LDAP setting changed: " + key
+    print("Verified LDAP-Auth compatibility, bind Secret rotation and partial ownership", flush=True)
+
     changed_branding = api(branding_path)
     changed_branding["LoginDisclaimer"] = "External drift"
     api(branding_path, changed_branding)
@@ -376,6 +403,9 @@ try:
     for item in resources:
         eventually(lambda item=item: reconciled(item["kind"], item["metadata"]["name"]), "resource failed after controller restart")
     assert next(item for item in api("/Library/VirtualFolders") if item["Name"] == "Disposable library")["ItemId"] == library["ItemId"]
+
+    assert api(ldap_path)["LdapBindPassword"] == "rotated-fixture-password", "LDAP credential changed after restart"
+    assert api(ldap_path)["LdapServer"] == "ldap.fixture.invalid", "LDAP ownership changed after restart"
 
     # Removing a CR without Delete must preserve the external library; adoption keeps its identity.
     kube("delete", "library/library", "--wait=true", "--timeout=90s")

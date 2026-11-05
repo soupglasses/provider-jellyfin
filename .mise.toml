@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
 # SPDX-License-Identifier: MPL-2.0
 [tools]
+go = "1.27.3"
+terraform = "1.17.1"
 "aqua:helm" = "4.3.1"
 "aqua:kubernetes/kubectl" = "1.37.2"
 "aqua:google/yamlfmt" = "v0.21.0"

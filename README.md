@@ -7,7 +7,11 @@ SPDX-License-Identifier: MPL-2.0
 
 This controller embeds the Jellyfin Terraform Plugin Framework provider through
 Upjet. It runs no Terraform executable and needs no Terraform state volume.
-The upstream fork and revision are pinned in [go.mod](go.mod).
+The maintained Terraform fork and revision are pinned in [go.mod](go.mod).
+Integrate upstream changes into that fork’s `main` first, preserving the sensitive
+plugin configuration and partial ownership behavior. Renovate updates the fork’s
+main pseudo-version, not inherited upstream release tags or the replaced upstream
+`require`. Regenerate and pass the native reconciliation tests before deployment.
 
 The Go module is nested under the upstream module path because the upstream
 provider constructor is internal. The `replace` directive downloads the pinned
@@ -54,7 +58,9 @@ Generated files use [`.gitattributes`](.gitattributes) to
 [collapse their diffs on GitHub](https://docs.github.com/en/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github).
 
 CI publishes commit-qualified main packages after unit and native-package tests.
-A semantic `v*` tag on main publishes a multiarchitecture package and release checksums.
+Changing `.github/release.yaml` on main publishes that semantic version and release
+checksums after the same checks pass. A semantic `v*` tag on main also supports
+release publication.
 Never move release tags; publish a new version instead.
 
 Renovate groups Go dependency updates to preserve Kubernetes client compatibility.

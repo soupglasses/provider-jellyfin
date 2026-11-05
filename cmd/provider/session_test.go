@@ -45,7 +45,7 @@ func (f *sessionFixture) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	switch r.URL.Path {
 	case "/System/Info/Public":
-		_ = json.NewEncoder(w).Encode(map[string]any{"StartupWizardCompleted": f.initialized, "Version": "12.2"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"StartupWizardCompleted": f.initialized, "Version": "12.4"})
 	case "/Startup/Configuration", "/Startup/User", "/Startup/Complete":
 		if r.Method == http.MethodGet {
 			_, _ = w.Write([]byte(`{"Name":"","Password":""}`))
