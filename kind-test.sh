@@ -53,7 +53,7 @@ for namespace in crossplane-system media; do
         pod-security.kubernetes.io/enforce-version="$psa_version"
 done
 helm upgrade --install crossplane crossplane --repo https://charts.crossplane.io/stable \
-    --version 2.4.2 --namespace crossplane-system \
+    --version 2.4.3 --namespace crossplane-system \
     --set-json 'securityContextCrossplane={"runAsNonRoot":true,"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"seccompProfile":{"type":"RuntimeDefault"}}' \
     --set-json 'securityContextRBACManager={"runAsNonRoot":true,"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"seccompProfile":{"type":"RuntimeDefault"}}' \
     --wait --timeout 4m
