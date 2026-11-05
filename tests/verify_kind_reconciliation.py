@@ -10,6 +10,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+import uuid
 
 
 def kube(*args, value=None):
@@ -355,7 +356,7 @@ try:
 
     # Use the same LDAP-Auth plugin as production and rotate its bind credential.
     ldap_id = "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
-    ldap = next(item for item in api("/Plugins") if item["Id"].lower() == ldap_id)
+    ldap = next(item for item in api("/Plugins") if uuid.UUID(item["Id"]) == uuid.UUID(ldap_id))
     assert ldap["Status"] == "Active", "LDAP-Auth is not compatible with the runtime"
     ldap_path = "/Plugins/" + ldap_id + "/Configuration"
     ldap_baseline = api(ldap_path)
