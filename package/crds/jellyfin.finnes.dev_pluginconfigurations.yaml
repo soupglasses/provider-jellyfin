@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: pluginconfigurations.jellyfin.finnes.dev
 spec:
   group: jellyfin.finnes.dev
@@ -19,77 +19,7 @@ spec:
   versions:
     - additionalPrinterColumns:
         - jsonPath: .status.conditions[?(@.type=='Synced')].status
-          name: SYNCED
-          type: string
-        - jsonPath: .status.conditions[?(@.type=='Ready')].status
-          name: READY
-          type: string
-        - jsonPath: .metadata.annotations.crossplane\.io/external-name
-          name: EXTERNAL-NAME
-          type: string
-        - jsonPath: .metadata.creationTimestamp
-          name: AGE
-          type: date
-      name: v1alpha1
-      schema:
-        openAPIV3Schema:
-          description: PluginConfiguration is the Schema for the PluginConfigurations API. <no value>
-          properties:
-            apiVersion:
-              description: |-
-                APIVersion defines the versioned schema of this representation of an object.
-                Servers should convert recognized schemas to the latest internal value, and
-                may reject unrecognized values.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-              type: string
-            kind:
-              description: |-
-                Kind is a string value representing the REST resource this object represents.
-                Servers may infer this from the endpoint the client submits requests to.
-                Cannot be updated.
-                In CamelCase.
-                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-              type: string
-            metadata:
-              type: object
-            spec:
-              description: PluginConfigurationSpec defines the desired state of PluginConfiguration
-              properties:
-                forProvider:
-                  properties:
-                    configurationJsonSecretRef:
-                      description: A JSON object containing only the plugin settings to manage. Unspecified
-                        object keys are preserved; arrays are replaced whole.
-                      properties:
-                        key:
-                          type: string
-                        name:
-                          description: Name of the secret.
-                          type: string
-                      required:
-                        - key
-                        - name
-                      type: object
-                  type: object
-                initProvider:
-                  description: |-
-                    THIS IS A BETA FIELD. It will be honored
-                    unless the Management Policies feature flag is disabled.
-                    InitProvider holds the same fields as ForProvider, with the exception
-                    of Identifier and other resource reference fields. The fields that are
-                    in InitProvider are merged into ForProvider when the resource is created.
-                    The same fields are also added to the terraform ignore_changes hook, to
-                    avoid updating them after creation. This is useful for fields that are
-                    required on creation, but we do not desire to update them after creation,
-                    for example because of an external controller is managing them, like an
-                    autoscaler.
-                  properties:
-                    configurationJsonSecretRef:
-                      description: A JSON object containing only the plugin settings to manage. Unspecified
-                        object keys are preserved; arrays are replaced whole.
-                      properties:
-                        key:
-                          type: string
+          name: SYNC…899 tokens truncated…ype: string
                         name:
                           description: Name of the secret.
                           type: string

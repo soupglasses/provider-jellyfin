@@ -4,7 +4,7 @@ FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23@sha256:8a5046497cda39860
 WORKDIR /src
 RUN apk add --no-cache bash && \
     go install golang.org/x/tools/cmd/goimports@v0.52.0 && \
-    go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.20.1 && \
+    go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.23.0 && \
     go install github.com/crossplane/crossplane-tools/cmd/angryjet@v0.0.0-20260719180100-659f1dc036c5 && \
     go install github.com/google/yamlfmt/cmd/yamlfmt@v0.21.0
 COPY go.mod go.sum ./
@@ -30,7 +30,7 @@ COPY --from=generate /src/internal/controller /internal/controller
 FROM scratch AS coverage
 COPY --from=unit-tests /tmp/coverage.out /coverage.out
 
-FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:71e9b7bae160ba167fa17414401b94cbcdaf3c32feeab9298bd794a2a0614c35 AS certificates
+FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS certificates
 RUN apk add --no-cache ca-certificates
 
 FROM scratch AS runtime
