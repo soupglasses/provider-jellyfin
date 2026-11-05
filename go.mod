@@ -166,4 +166,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.4.2 // indirect
 )
 
-replace github.com/ThePhaseless/terraform-provider-jellyfin => github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105110547-ecf7671d77ef
+replace github.com/ThePhaseless/terraform-provider-jellyfin => github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105114315-b0ae7dfb0224
