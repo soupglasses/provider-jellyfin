@@ -25,11 +25,11 @@ jobs:
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
           version: 2026.10.15
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
         with:
           driver: docker-container
       - name: Build cached amd64 controller image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           target: runtime
@@ -41,7 +41,7 @@ jobs:
             type=gha,scope=provider
           cache-to: type=gha,mode=max,scope=provider-amd64
       - name: Build cached arm64 controller image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           target: runtime
@@ -58,7 +58,7 @@ jobs:
             crossplane xpkg build --package-root package --embed-runtime-image "provider-jellyfin:$arch-development" --package-file "/tmp/provider-jellyfin-$arch.xpkg"
           done
       - name: Export cached generated files
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           target: generated
@@ -67,7 +67,7 @@ jobs:
             type=gha,scope=provider-amd64
             type=gha,scope=provider
       - name: Export cached coverage
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           target: coverage
