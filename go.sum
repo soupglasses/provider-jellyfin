@@ -292,6 +292,8 @@ github.com/santhosh-tekuri/jsonschema/v6 v6.0.2/go.mod h1:JXeL+ps8p7/KNMjDQk3TCw
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
 github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105110547-ecf7671d77ef h1:TzayqL73XAJxr8mzveWuvVBcv5LFPgvm4UBTGmfmrkY=
 github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105110547-ecf7671d77ef/go.mod h1:EZd19I6vxXUx9y9rK6kDYHQlLzQwO8shjaBQ/TlZeE4=
+github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105114315-b0ae7dfb0224 h1:UIlaYWbou02lNiYK9MYUyzBBwN9PwKb6fA8cNnpDpIU=
+github.com/soupglasses/terraform-provider-jellyfin v0.6.1-0.20261105114315-b0ae7dfb0224/go.mod h1:EZd19I6vxXUx9y9rK6kDYHQlLzQwO8shjaBQ/TlZeE4=
 github.com/spf13/afero v1.15.0 h1:b/YBCLWAJdFWJTN9cLhiXXcD7mzKn9Dm86dNnfyQw1I=
 github.com/spf13/afero v1.15.0/go.mod h1:NC2ByUVxtQs4b3sIUphxK0NioZnmxgyCrfzeuq8lxMg=
 github.com/spf13/cobra v1.10.2 h1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=
