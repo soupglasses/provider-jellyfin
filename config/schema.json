@@ -2010,6 +2010,17 @@
                 "sensitive": false,
                 "type": "bool"
               },
+              "app_password_refused_clients": {
+                "computed": true,
+                "description": "Client names, matched case-insensitively, that may not sign in with an app password, on top of the always-refused Jellyfin Web. Do not list clients that cannot show the 2FA challenge, or their users lose their only way in. Requires plugin 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": [
+                  "list",
+                  "string"
+                ]
+              },
               "audit_log_max_entries": {
                 "computed": true,
                 "description": "Max audit log entries.",
@@ -2169,6 +2180,22 @@
                 "required": false,
                 "sensitive": true,
                 "type": "string"
+              },
+              "gotify_app_token_wo": {
+                "computed": false,
+                "description": "Write-only form of `gotify_app_token`, never stored in plan or state. Sent on create and whenever `gotify_app_token_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "gotify_app_token_wo_version": {
+                "computed": false,
+                "description": "Change this to send `gotify_app_token_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
               },
               "gotify_url": {
                 "computed": true,
@@ -2355,6 +2382,22 @@
                 "sensitive": true,
                 "type": "string"
               },
+              "ntfy_password_wo": {
+                "computed": false,
+                "description": "Write-only form of `ntfy_password`, never stored in plan or state. Sent on create and whenever `ntfy_password_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "ntfy_password_wo_version": {
+                "computed": false,
+                "description": "Change this to send `ntfy_password_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
+              },
               "ntfy_token": {
                 "computed": true,
                 "description": "ntfy access token; takes precedence over ntfy_username/ntfy_password.",
@@ -2362,6 +2405,22 @@
                 "required": false,
                 "sensitive": true,
                 "type": "string"
+              },
+              "ntfy_token_wo": {
+                "computed": false,
+                "description": "Write-only form of `ntfy_token`, never stored in plan or state. Sent on create and whenever `ntfy_token_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "ntfy_token_wo_version": {
+                "computed": false,
+                "description": "Change this to send `ntfy_token_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
               },
               "ntfy_topic": {
                 "computed": true,
@@ -2386,6 +2445,25 @@
                 "required": false,
                 "sensitive": false,
                 "type": "string"
+              },
+              "oidc_client_secrets_wo": {
+                "computed": false,
+                "description": "Write-only OIDC client secrets keyed by provider `id`, never stored in plan or state. Sent on create, whenever `oidc_client_secrets_wo_version` changes, and for a provider `id` the plugin does not have yet; otherwise the plugin keeps what it has. An empty string clears a provider's secret. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": [
+                  "map",
+                  "string"
+                ]
+              },
+              "oidc_client_secrets_wo_version": {
+                "computed": false,
+                "description": "Change this to send `oidc_client_secrets_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
               },
               "oidc_providers": {
                 "computed": true,
@@ -2880,6 +2958,22 @@
                 "sensitive": true,
                 "type": "string"
               },
+              "smtp_password_wo": {
+                "computed": false,
+                "description": "Write-only form of `smtp_password`, never stored in plan or state. Sent on create and whenever `smtp_password_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "smtp_password_wo_version": {
+                "computed": false,
+                "description": "Change this to send `smtp_password_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
+              },
               "smtp_port": {
                 "computed": true,
                 "description": "SMTP server port.",
@@ -2935,6 +3029,22 @@
                 "required": false,
                 "sensitive": true,
                 "type": "string"
+              },
+              "telegram_bot_token_wo": {
+                "computed": false,
+                "description": "Write-only form of `telegram_bot_token`, never stored in plan or state. Sent on create and whenever `telegram_bot_token_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "telegram_bot_token_wo_version": {
+                "computed": false,
+                "description": "Change this to send `telegram_bot_token_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
               },
               "telegram_chat_id": {
                 "computed": true,
@@ -3034,6 +3144,22 @@
                 "sensitive": true,
                 "type": "string"
               },
+              "webhook_ed25519_private_key_wo": {
+                "computed": false,
+                "description": "Write-only form of `webhook_ed25519_private_key`, never stored in plan or state. Sent on create and whenever `webhook_ed25519_private_key_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "webhook_ed25519_private_key_wo_version": {
+                "computed": false,
+                "description": "Change this to send `webhook_ed25519_private_key_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
+              },
               "webhook_headers": {
                 "computed": true,
                 "description": "Extra webhook headers, one \"Name: Value\" entry each. Sensitive, as receivers authenticate with a header such as Authorization.",
@@ -3045,6 +3171,25 @@
                   "string"
                 ]
               },
+              "webhook_headers_wo": {
+                "computed": false,
+                "description": "Write-only extra webhook headers, keyed by header name, never stored in plan or state. Sent as `Name: value` lines sorted by name, which replace every header, on create and whenever `webhook_headers_wo_version` changes; otherwise the plugin keeps what it has. It cannot hold two headers with the same name. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": [
+                  "map",
+                  "string"
+                ]
+              },
+              "webhook_headers_wo_version": {
+                "computed": false,
+                "description": "Change this to send `webhook_headers_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
+              },
               "webhook_secret": {
                 "computed": true,
                 "description": "Webhook signing secret.",
@@ -3053,6 +3198,22 @@
                 "sensitive": true,
                 "type": "string"
               },
+              "webhook_secret_wo": {
+                "computed": false,
+                "description": "Write-only form of `webhook_secret`, never stored in plan or state. Sent on create and whenever `webhook_secret_wo_version` changes; otherwise the plugin keeps what it has. An empty string clears it. Terraform cannot read the stored value back, so it does not see a change made outside Terraform. Requires Terraform 1.11 or later and JellyfinSecurity 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": true,
+                "type": "string"
+              },
+              "webhook_secret_wo_version": {
+                "computed": false,
+                "description": "Change this to send `webhook_secret_wo` again, for example after rotating the secret.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "number"
+              },
               "webhook_url": {
                 "computed": true,
                 "description": "Webhook notification URL. Sensitive, as receivers such as Discord and Slack take a token in the URL.",
@@ -3060,6 +3221,14 @@
                 "required": false,
                 "sensitive": true,
                 "type": "string"
+              },
+              "welcome_email_enabled": {
+                "computed": true,
+                "description": "Send a one-off welcome email the first time a user registers or changes their MFA email address, which also catches a mistyped address. Does nothing unless SMTP is configured. The plugin defaults to on. Requires plugin 2.6.5 or later.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "bool"
               }
             }
           },

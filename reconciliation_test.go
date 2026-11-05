@@ -43,7 +43,7 @@ func TestLibraryAdoptionRejectsReplacement(t *testing.T) {
 		}
 		switch r.URL.Path {
 		case "/System/Info/Public":
-			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.2"}`)
+			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.4"}`)
 		case "/Library/VirtualFolders":
 			_, _ = io.WriteString(w, `[{"Name":"Movies","ItemId":"existing-library-id","CollectionType":"movies","Locations":["/media/movies"],"LibraryOptions":{}}]`)
 		default:
@@ -100,7 +100,7 @@ func TestGeneratedResourceReconciliation(t *testing.T) {
 	setRemote := func(raw string) { mu.Lock(); defer mu.Unlock(); remote = raw }
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/System/Info/Public" {
-			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.2"}`)
+			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.4"}`)
 			return
 		}
 		if r.URL.Path == "/Users/AuthenticateByName" && r.Method == http.MethodPost {

@@ -17,7 +17,7 @@ var providerSchema []byte
 
 const Module = "github.com/ThePhaseless/terraform-provider-jellyfin/crossplane"
 
-func FrameworkProvider() provider.Provider { return upstream.New("65dbe330d086")() }
+func FrameworkProvider() provider.Provider { return upstream.New("crossplane")() }
 
 func WithSchema(raw []byte, group string) *ujconfig.Provider {
 	p := ujconfig.NewProvider(raw, "jellyfin", Module, []byte("name: jellyfin\nresources: {}\n"),
