@@ -58,7 +58,9 @@ Generated files use [`.gitattributes`](.gitattributes) to
 [collapse their diffs on GitHub](https://docs.github.com/en/repositories/working-with-files/managing-files/customizing-how-changed-files-appear-on-github).
 
 CI publishes commit-qualified main packages after unit and native-package tests.
-A semantic `v*` tag on main publishes a multiarchitecture package and release checksums.
+Changing `.github/release.yaml` on main publishes that semantic version and release
+checksums after the same checks pass. A semantic `v*` tag on main also supports
+release publication.
 Never move release tags; publish a new version instead.
 
 Renovate groups Go dependency updates to preserve Kubernetes client compatibility.

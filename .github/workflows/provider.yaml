@@ -122,8 +122,26 @@ jobs:
         with:
           version: 2026.11.1
           install_args: aqua:crossplane/cli
-      - name: Validate release tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Select package version
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="v0.0.0-${GITHUB_SHA}"
+          release=false
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="$REF_NAME"
+            release=true
+          elif git diff --name-only "$GITHUB_SHA^" "$GITHUB_SHA" -- .github/release.yaml | grep -q .; then
+            version="$(sed -n 's/^version: //p' .github/release.yaml)"
+            release=true
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+      - name: Validate release version
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        if: steps.version.outputs.release == 'true'
         run: |
           python3 - <<'PYTHON'
           import os
@@ -131,28 +149,27 @@ jobs:
           numeric = r"(?:0|[1-9][0-9]*)"
           identifier = rf"(?:{numeric}|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
           version = rf"v{numeric}\.{numeric}\.{numeric}(?:-{identifier}(?:\.{identifier})*)?"
-          if re.fullmatch(version, os.environ["GITHUB_REF_NAME"]) is None:
+          if re.fullmatch(version, os.environ["RELEASE_VERSION"]) is None:
               raise SystemExit("Release tags must be OCI-compatible semantic versions, such as v1.2.3 or v1.2.3-rc.1")
           PYTHON
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Reject an existing release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $GITHUB_REF_NAME already exists; publish a new version." >&2
+          if gh release view "$RELEASE_VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_VERSION already exists; publish a new version." >&2
             exit 1
           fi
       - name: Publish native Provider package
         env:
           GH_TOKEN: ${{ github.token }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          version="v0.0.0-${GITHUB_SHA}"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            version="$GITHUB_REF_NAME"
-          fi
+          version="$PACKAGE_VERSION"
           crossplane xpkg push --package-files /tmp/release/provider-jellyfin-amd64.xpkg,/tmp/release/provider-jellyfin-arm64.xpkg --oci-annotation org.opencontainers.image.revision="$GITHUB_SHA" --oci-annotation org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" "ghcr.io/soupglasses/provider-jellyfin:$version"
           anonymous_config=$(mktemp -d)
           trap 'rm -rf "$anonymous_config"' EXIT
@@ -162,14 +179,15 @@ jobs:
           fi
           jq --exit-status '[.manifests[].platform | .os + "/" + .architecture] | sort == ["linux/amd64", "linux/arm64"]' /tmp/provider-index.json
       - name: Publish release artifacts
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         working-directory: /tmp/release
         run: |
           sha256sum provider-jellyfin-amd64.xpkg provider-jellyfin-arm64.xpkg > SHA256SUMS
           release_args=()
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          if [[ "$RELEASE_VERSION" == *-* ]]; then
             release_args+=(--prerelease --latest=false)
           fi
-          gh release create "$GITHUB_REF_NAME" provider-jellyfin-amd64.xpkg provider-jellyfin-arm64.xpkg SHA256SUMS --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes "${release_args[@]}"
+          gh release create "$RELEASE_VERSION" provider-jellyfin-amd64.xpkg provider-jellyfin-arm64.xpkg SHA256SUMS --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --generate-notes "${release_args[@]}"
