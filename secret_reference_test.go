@@ -44,7 +44,7 @@ func TestPluginSecretReferenceWithAPIClient(t *testing.T) {
 				Data:       map[string][]byte{"json": []byte(`{"owned":2}`)},
 			})
 		case "/System/Info/Public":
-			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.2"}`)
+			_, _ = io.WriteString(w, `{"StartupWizardCompleted":true,"Version":"12.4"}`)
 		case "/Plugins/plugin/Configuration":
 			_, _ = io.WriteString(w, `{"owned":1,"runtime":true}`)
 		default:
