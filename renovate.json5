@@ -12,9 +12,12 @@
   ],
   "packageRules": [
     {
-      // This require is replaced: changing it does not update the embedded code.
-      "matchManagers": ["gomod"],
-      "matchPackageNames": ["github.com/ThePhaseless/terraform-provider-jellyfin"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/ThePhaseless/terraform-provider-jellyfin"
+      ],
       "enabled": false
     },
     {
@@ -24,10 +27,12 @@
       "groupName": "Go dependencies"
     },
     {
-      // The maintained fork's main includes the ownership patch. Upstream tags
-      // inherited by the fork do not, so consume main pseudo-versions only.
-      "matchManagers": ["gomod"],
-      "matchPackageNames": ["github.com/soupglasses/terraform-provider-jellyfin"],
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/soupglasses/terraform-provider-jellyfin"
+      ],
       "allowedVersions": "/-[0-9]{14}-[0-9a-f]{12}$/",
       "groupName": "Jellyfin Terraform fork"
     },
@@ -41,8 +46,12 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^tests/jellyfin-image\\.txt$/"],
-      "matchStrings": ["(?<depName>ghcr.io/soupglasses/ops/jellyfin-runtime):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+      "managerFilePatterns": [
+        "/^tests/jellyfin-image\\.txt$/"
+      ],
+      "matchStrings": [
+        "(?<depName>ghcr.io/soupglasses/ops/jellyfin-runtime):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
       "datasourceTemplate": "docker"
     },
     {
@@ -76,23 +85,28 @@
       "datasourceTemplate": "helm",
       "depNameTemplate": "crossplane",
       "registryUrlTemplate": "https://charts.crossplane.io/stable"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^\\.github/workflows/provider\\.yaml$/"
-      ],
-      "matchStrings": [
-        "version: (?<currentValue>[0-9]{4}\\.[0-9]+\\.[0-9]+)"
-      ],
-      "datasourceTemplate": "github-releases",
-      "depNameTemplate": "jdx/mise",
-      "extractVersionTemplate": "^v(?<version>.*)$"
     }
   ],
   "crossplane": {
     "managerFilePatterns": [
       "/^(examples/.*|tests/provider)\\.yaml$/"
+    ]
+  },
+  "timezone": "Europe/Copenhagen",
+  "schedule": [
+    "* * * * 1"
+  ],
+  "updateNotScheduled": false,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [
+      "at any time"
+    ],
+    "minimumReleaseAge": null
+  },
+  "lockFileMaintenance": {
+    "schedule": [
+      "* * * * 1"
     ]
   }
 }
