@@ -3,12 +3,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "docker:pinDigests",
-    "helpers:pinGitHubActionDigests"
-  ],
-  "labels": [
-    "dependencies"
+    "github>soupglasses/renovate-configs#v0.1.0",
+    "github>soupglasses/renovate-configs:providers#v0.1.0"
   ],
   "packageRules": [
     {
@@ -24,23 +20,11 @@
       "matchManagers": [
         "gomod"
       ],
-      "groupName": "Go dependencies"
-    },
-    {
-      "matchManagers": [
-        "gomod"
-      ],
       "matchPackageNames": [
         "github.com/soupglasses/terraform-provider-jellyfin"
       ],
       "allowedVersions": "/-[0-9]{14}-[0-9a-f]{12}$/",
       "groupName": "Jellyfin Terraform fork"
-    },
-    {
-      "matchManagers": [
-        "github-actions"
-      ],
-      "groupName": "GitHub Actions"
     }
   ],
   "customManagers": [
@@ -53,60 +37,6 @@
         "(?<depName>ghcr.io/soupglasses/ops/jellyfin-runtime):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
       "datasourceTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^Dockerfile$/"
-      ],
-      "matchStrings": [
-        "go install (?<depName>[^@\\s]+?)(?:/cmd/[^@\\s]+)?@(?<currentValue>[^\\s]+)"
-      ],
-      "datasourceTemplate": "go"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^kind-test\\.sh$/"
-      ],
-      "matchStrings": [
-        "(?<depName>kindest/node|registry):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
-      ],
-      "datasourceTemplate": "docker"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^kind-test\\.sh$/"
-      ],
-      "matchStrings": [
-        "--version (?<currentValue>[0-9.]+) --namespace crossplane-system"
-      ],
-      "datasourceTemplate": "helm",
-      "depNameTemplate": "crossplane",
-      "registryUrlTemplate": "https://charts.crossplane.io/stable"
     }
-  ],
-  "crossplane": {
-    "managerFilePatterns": [
-      "/^(examples/.*|tests/provider)\\.yaml$/"
-    ]
-  },
-  "timezone": "Europe/Copenhagen",
-  "schedule": [
-    "* * * * 1"
-  ],
-  "updateNotScheduled": false,
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "schedule": [
-      "at any time"
-    ],
-    "minimumReleaseAge": null
-  },
-  "lockFileMaintenance": {
-    "schedule": [
-      "* * * * 1"
-    ]
-  }
+  ]
 }
