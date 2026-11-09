@@ -30,7 +30,7 @@ COPY --from=generate /src/internal/controller /internal/controller
 FROM scratch AS coverage
 COPY --from=unit-tests /tmp/coverage.out /coverage.out
 
-FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS certificates
+FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS certificates
 RUN apk add --no-cache ca-certificates
 
 FROM scratch AS runtime
