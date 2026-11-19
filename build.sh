@@ -4,7 +4,7 @@
 set -euo pipefail
 package_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 output=${1:?Pass the output .xpkg path}
-platform=${2:-linux/amd64}
+platform=${2:-$(docker version --format '{{.Server.Os}}/{{.Server.Arch}}')}
 image="provider-jellyfin:${platform##*/}-development"
 work_dir=$(mktemp -d)
 trap 'rm -rf -- "$work_dir"' EXIT

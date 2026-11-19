@@ -92,7 +92,7 @@ jobs:
         env:
           PROVIDER_PACKAGE: /tmp/provider-jellyfin-amd64.xpkg
           TEST_ARTIFACTS_DIR: /tmp/native-reports
-        run: bash kind-test.sh
+        run: bash e2e.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
