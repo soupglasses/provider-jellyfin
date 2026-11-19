@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
+# SPDX-License-Identifier: MPL-2.0
+apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+kind: NetworkingConfiguration
+metadata:
+  name: jellyfin
+  namespace: media
+  annotations:
+    crossplane.io/external-name: networking
+spec:
+  managementPolicies: [Observe, Create, Update]
+  providerConfigRef:
+    kind: ProviderConfig
+    name: jellyfin
+  forProvider:
+    enableUpnp: false
+    enableRemoteAccess: true

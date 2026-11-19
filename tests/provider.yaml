@@ -9,12 +9,12 @@ spec:
   package: ghcr.io/soupglasses/provider-jellyfin:v0.1.0
   revisionHistoryLimit: 2
   runtimeConfigRef:
-    name: jellyfin
+    name: provider-jellyfin
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: DeploymentRuntimeConfig
 metadata:
-  name: jellyfin
+  name: provider-jellyfin
 spec:
   serviceAccountTemplate:
     metadata:
