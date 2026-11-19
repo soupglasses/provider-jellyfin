@@ -9,7 +9,7 @@ README.md
 renovate.json5
 .mise.toml
 tests
-kind-test.sh
+e2e.sh
+examples
 build.sh
 package
-__pycache__

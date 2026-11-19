@@ -29,15 +29,17 @@ The controller watches one configured namespace and resolves credentials locally
 
 ```sh
 mise install
-mise exec -- bash build.sh /tmp/provider-jellyfin.xpkg linux/amd64
-mise exec -- env PROVIDER_PACKAGE=/tmp/provider-jellyfin.xpkg bash kind-test.sh
+mise run e2e
 ```
 
-The native package test installs Crossplane and an empty Jellyfin instance in a
-restricted kind cluster. It verifies initial setup, all resource kinds, observation without writes,
-Secret rotation, settings updates, drift correction, controller restarts and
-orphan/adopt/delete policies while preserving unrelated server state.
-Set `JELLYFIN_TEST_IMAGE` to test a local Jellyfin image.
+`mise run e2e` builds the package and installs it with Crossplane in a restricted kind
+cluster with empty Jellyfin instances.
+[uptest](https://github.com/crossplane/uptest) applies the examples listed in `e2e.sh`
+and re-imports them after a provider restart. The
+[Chainsaw](https://kyverno.github.io/chainsaw/) suite in `tests/e2e` verifies initial setup,
+all resource kinds, observation without writes, Secret rotation, settings updates, drift
+correction, controller restarts and orphan/adopt/delete policies while preserving unrelated
+server state. Set `JELLYFIN_TEST_IMAGE` to test a local Jellyfin image.
 
 Generated APIs, controllers, CRDs and the Terraform schema are committed. To regenerate
 with the tools pinned in the Dockerfile:

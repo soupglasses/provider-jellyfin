@@ -1,0 +1,657 @@
+# SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
+# SPDX-License-Identifier: MPL-2.0
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: jellyfin-lifecycle
+spec:
+  namespace: media
+  # The cluster is disposable, and deleting resources with Orphan policies proves nothing.
+  skipDelete: true
+  timeouts:
+    apply: 30s
+    assert: 150s
+    delete: 90s
+    exec: 300s
+  steps:
+    - name: installation
+      description: The package runs under restricted Pod Security with namespaced APIs and the expected
+        permissions.
+      try:
+        - script:
+            shell: bash
+            content: |
+              set -euo pipefail
+              failed=0
+              expect_permission() {
+                  local expected=$1 identity=$2 actual
+                  shift 2
+                  actual=$(kubectl auth can-i --as="$identity" "$@" 2>/dev/null || true)
+                  if [[ $actual != "$expected" ]]; then
+                      echo "expected $expected for $identity $*; got $actual" >&2
+                      failed=1
+                  fi
+              }
+              # Native Crossplane providers receive cluster-wide Secret permissions, independently of CRD scope.
+              for verb in get list create update delete; do
+                  expect_permission yes system:serviceaccount:crossplane-system:jellyfin-provider "$verb" secrets --all-namespaces
+              done
+              for resource in secrets pluginconfigurations.jellyfin.ops.finnes.dev; do
+                  for verb in get list watch create update patch delete; do
+                      expect_permission yes system:serviceaccount:crossplane-system:crossplane "$verb" "$resource" --namespace media
+                  done
+              done
+              for resource in providerconfigs brandingconfigurations libraries networkingconfigurations \
+                  pluginconfigurations pluginrepositories plugins scheduledtasks systemconfigurations; do
+                  scope=$(kubectl get crd "$resource.jellyfin.ops.finnes.dev" --output jsonpath='{.spec.scope}')
+                  if [[ $scope != Namespaced ]]; then
+                      echo "expected namespaced $resource; got $scope" >&2
+                      failed=1
+                  fi
+              done
+              revision=$(kubectl get provider jellyfin --output jsonpath='{.status.currentRevision}')
+              watch_namespace=$(kubectl get deployment "$revision" --namespace crossplane-system \
+                  --output jsonpath='{.spec.template.spec.containers[?(@.name=="package-runtime")].env[?(@.name=="WATCH_NAMESPACE")].value}')
+              if [[ $watch_namespace != media ]]; then
+                  echo "expected the controller to watch media; got $watch_namespace" >&2
+                  failed=1
+              fi
+              ((failed == 0))
+    - name: empty-server
+      try:
+        - script:
+            shell: bash
+            timeout: 8m
+            content: ../fixture.sh jellyfin-fixture
+        - script:
+            shell: bash
+            env:
+              - name: JELLYFIN_ANONYMOUS
+                value: "true"
+            content: |
+              source ./lib.sh
+              info=$(api GET /System/Info/Public)
+              jq --exit-status '.StartupWizardCompleted == false' <<<"$info" >/dev/null || {
+                  echo 'fixture was already initialized' >&2
+                  exit 1
+              }
+              remember server-id "$(jq --raw-output .Id <<<"$info")"
+    - name: first-administrator
+      description: Creating a SystemConfiguration completes the startup wizard with exactly one administrator.
+      try:
+        - apply:
+            resource:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: kind-credentials
+              stringData:
+                password: disposable-kind-test-password
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1beta1
+              kind: ProviderConfig
+              metadata:
+                name: kind-fixture
+              spec:
+                endpoint: http://jellyfin-fixture.media.svc.cluster.local:8096
+                username: fixture-admin
+                passwordSecretRef:
+                  name: kind-credentials
+                  key: password
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: SystemConfiguration
+              metadata:
+                name: kind-fixture
+                annotations:
+                  crossplane.io/external-name: system
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  serverName: Fresh Crossplane instance
+        - assert:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: SystemConfiguration
+              metadata:
+                name: kind-fixture
+              status:
+                (conditions[?type == 'Synced'].status | [0]): "True"
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              JELLYFIN_ANONYMOUS=true check /System/Info/Public '.StartupWizardCompleted == true'
+              check /Users 'length == 1 and .[0].Policy.IsAdministrator' || {
+                  echo 'provider did not create exactly one first administrator' >&2
+                  exit 1
+              }
+              JELLYFIN_ANONYMOUS=true check /System/Info/Public '.Id == $id' --arg id "$(recall server-id)" || {
+                  echo 'server was replaced' >&2
+                  exit 1
+              }
+              baseline=$(api GET /System/Configuration)
+              jq --exit-status '.ServerName == "Fresh Crossplane instance"' <<<"$baseline" >/dev/null
+              remember system "$baseline"
+              remember users "$(api GET /Users | jq --compact-output 'map([.Id, .Name])')"
+    - name: observe-does-not-write
+      try:
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: SystemConfiguration
+              metadata:
+                name: kind-fixture
+              spec:
+                managementPolicies: [Observe]
+                forProvider:
+                  serverName: Managed by Crossplane
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              # Wait for a new reconciliation rather than accepting the previous Synced condition.
+              eventually 'Observe reconciled the new generation' reconciled systemconfiguration/kind-fixture
+              check /System/Configuration '.ServerName == ($baseline | fromjson).ServerName' \
+                  --arg baseline "$(recall system)" || {
+                  echo 'Observe wrote settings' >&2
+                  exit 1
+              }
+    - name: update-and-correct-drift
+      try:
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: SystemConfiguration
+              metadata:
+                name: kind-fixture
+              spec:
+                managementPolicies: [Observe, Create, Update]
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              expect 'controller applied desired settings' /System/Configuration '.ServerName == "Managed by Crossplane"'
+              api POST /System/Configuration "$(api GET /System/Configuration | jq '.ServerName = "External drift"')"
+              expect 'controller corrected API drift' /System/Configuration '.ServerName == "Managed by Crossplane"'
+              eventually 'SystemConfiguration reconciled' reconciled systemconfiguration/kind-fixture
+              check /System/Configuration '
+                  ($baseline | fromjson) as $before
+                  | [.UICulture, .MetadataCountryCode, .PreferredMetadataLanguage]
+                    == [$before.UICulture, $before.MetadataCountryCode, $before.PreferredMetadataLanguage]' \
+                  --arg baseline "$(recall system)"
+    - name: observe-plugin-configuration
+      try:
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              plugin=$(api GET /Plugins | jq --raw-output 'map(select(.Name == "TMDb")) | .[0].Id')
+              remember tmdb-id "$plugin"
+              remember tmdb "$(api GET "/Plugins/$plugin/Configuration")"
+              printf '%s' "$plugin"
+            outputs:
+              - name: plugin
+                value: ($stdout)
+        - apply:
+            resource:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: kind-plugin-settings
+              stringData:
+                configuration.json: "{}"
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginConfiguration
+              metadata:
+                name: kind-plugin
+                annotations:
+                  crossplane.io/external-name: ($plugin)
+              spec:
+                managementPolicies: [Observe]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  configurationJsonSecretRef:
+                    name: kind-plugin-settings
+                    key: configuration.json
+        - assert:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginConfiguration
+              metadata:
+                name: kind-plugin
+              status:
+                (conditions[?type == 'Ready'].status | [0]): "True"
+                (conditions[?type == 'Synced'].status | [0]): "True"
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              check "/Plugins/$(recall tmdb-id)/Configuration" '. == ($baseline | fromjson)' --arg baseline "$(recall tmdb)" || {
+                  echo 'Observe changed plugin configuration' >&2
+                  exit 1
+              }
+    - name: all-resource-kinds
+      try:
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              remember branding "$(api GET /System/Configuration/branding)"
+              remember network "$(api GET /System/Configuration/network)"
+              remember repositories "$(api GET /Repositories)"
+              task=$(api GET /ScheduledTasks | jq --compact-output 'map(select((.IsHidden | not) and .Key != "PluginUpdates")) | .[0]')
+              remember task-id "$(jq --raw-output .Id <<<"$task")"
+              jq --null-input --compact-output \
+                  --argjson network "$(recall network)" \
+                  --argjson repositories "$(recall repositories)" \
+                  --argjson task "$task" \
+                  --argjson plugins "$(api GET /Plugins)" '{
+                      publishedByRequest: ($network.EnablePublishedServerUriByRequest | not),
+                      repositoryUrl: $repositories[0].Url,
+                      task: $task.Key,
+                      plugin: ($plugins | map(select(.Name == "TMDb")) | .[0].Name)
+                  }'
+            outputs:
+              - name: values
+                value: (json_parse($stdout))
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: BrandingConfiguration
+              metadata:
+                name: branding
+                annotations:
+                  crossplane.io/external-name: branding
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  loginDisclaimer: Managed disclaimer
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: NetworkingConfiguration
+              metadata:
+                name: network
+                annotations:
+                  crossplane.io/external-name: networking
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  enablePublishedServerUriByRequest: ($values.publishedByRequest)
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginRepository
+              metadata:
+                name: repository
+                annotations:
+                  crossplane.io/external-name: http://jellyfin-fixture.media.svc.cluster.local:8096/disposable-catalog.json
+              spec:
+                managementPolicies: ["*"]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  name: Disposable repository
+                  enabled: false
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Library
+              metadata:
+                name: library
+                annotations:
+                  crossplane.io/external-name: Disposable library
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  collectionType: movies
+                  paths: [/media]
+                  libraryOptions:
+                    enableRealtimeMonitor: false
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: ScheduledTask
+              metadata:
+                name: task
+                annotations:
+                  crossplane.io/external-name: ($values.task)
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  triggers:
+                    - type: IntervalTrigger
+                      intervalTicks: 864000000000
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Plugin
+              metadata:
+                name: builtin-plugin
+                annotations:
+                  crossplane.io/external-name: ($values.plugin)
+              spec:
+                managementPolicies: [Observe]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  repositoryUrl: ($values.repositoryUrl)
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              for resource in brandingconfiguration/branding networkingconfiguration/network \
+                  pluginrepository/repository library/library scheduledtask/task plugin/builtin-plugin; do
+                  eventually "$resource reconciled" reconciled "$resource"
+              done
+              check /System/Configuration/branding '.LoginDisclaimer == "Managed disclaimer"'
+              check /System/Configuration/network '.EnablePublishedServerUriByRequest != $network.EnablePublishedServerUriByRequest' \
+                  --argjson network "$(recall network)"
+              check /Repositories 'any(.Url == $url and (.Enabled | not))' \
+                  --arg url http://jellyfin-fixture.media.svc.cluster.local:8096/disposable-catalog.json
+              library=$(api GET /Library/VirtualFolders | jq --compact-output 'map(select(.Name == "Disposable library")) | .[0]')
+              jq --exit-status '.Locations == ["/media"] and .LibraryOptions.EnableRealtimeMonitor == false' <<<"$library" >/dev/null
+              remember library-id "$(jq --raw-output .ItemId <<<"$library")"
+              check "/ScheduledTasks/$(recall task-id)" '.Triggers[0].IntervalTicks == 864000000000'
+              check /System/Configuration/branding '
+                  ($baseline | fromjson | del(.LoginDisclaimer)) as $before
+                  | del(.LoginDisclaimer) | . == $before' --arg baseline "$(recall branding)" || {
+                  echo 'unmanaged branding settings changed' >&2
+                  exit 1
+              }
+    - name: secret-backed-plugin-settings
+      description: Rotating the configuration Secret writes only the settings it names, using a built-in
+        plugin.
+      try:
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginConfiguration
+              metadata:
+                name: kind-plugin
+              spec:
+                managementPolicies: [Observe, Create, Update]
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              baseline=$(recall tmdb)
+              path="/Plugins/$(recall tmdb-id)/Configuration"
+              setting=$(jq --raw-output 'to_entries | map(select(.value | type == "boolean")) | .[0].key' <<<"$baseline")
+              original=$(jq --arg setting "$setting" '.[$setting]' <<<"$baseline")
+              for desired in "$(jq --null-input --argjson value "$original" '$value | not')" "$original"; do
+                  kubectl create secret generic kind-plugin-settings --namespace media --dry-run=client --output yaml \
+                      --from-literal=configuration.json="$(jq --null-input --compact-output --arg setting "$setting" \
+                          --argjson value "$desired" '{($setting): $value}')" |
+                      kubectl apply --filename -
+                  expect 'Secret rotation updated plugin settings' "$path" '.[$setting] == $value' \
+                      --arg setting "$setting" --argjson value "$desired"
+              done
+              check "$path" 'del(.[$setting]) == ($baseline | fromjson | del(.[$setting]))' \
+                  --arg setting "$setting" --arg baseline "$baseline" || {
+                  echo 'unmanaged plugin configuration changed' >&2
+                  exit 1
+              }
+    - name: install-and-update-plugin
+      description: LDAP-Auth is installed as production does, pinned, without automatic updates, restarting
+        Jellyfin to load each version.
+      try:
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: ScheduledTask
+              metadata:
+                name: plugin-updates
+                annotations:
+                  crossplane.io/external-name: PluginUpdates
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  triggers: []
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              eventually 'PluginUpdates triggers were removed' reconciled scheduledtask/plugin-updates
+              recall repositories | jq --join-output '.[0].Url'
+            outputs:
+              - name: repositoryUrl
+                value: ($stdout)
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Plugin
+              metadata:
+                name: ldap-plugin
+                annotations:
+                  crossplane.io/external-name: LDAP Authentication
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  version: 23.0.0.0
+                  repositoryUrl: ($repositoryUrl)
+                  restart: true
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              expect 'LDAP-Auth was installed and loaded' /Plugins \
+                  '[.[] | select((.Id | gsub("-"; "")) == "958aad6637844d2ab89aa7b6fab6e25c" and .Status != "Deleted") | [.Version, .Status]] == [["23.0.0.0", "Active"]]'
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Plugin
+              metadata:
+                name: ldap-plugin
+              spec:
+                forProvider:
+                  version: 24.0.0.0
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              expect 'LDAP-Auth was updated in place' /Plugins \
+                  '[.[] | select((.Id | gsub("-"; "")) == "958aad6637844d2ab89aa7b6fab6e25c" and .Status != "Deleted") | [.Version, .Status]] == [["24.0.0.0", "Active"]]'
+              eventually 'LDAP-Auth Plugin reconciled' reconciled plugin/ldap-plugin
+    - name: rotate-plugin-credential
+      description: The LDAP-Auth bind credential rotates, and a setting dropped from the Secret is released
+        without being cleared.
+      try:
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              remember ldap "$(api GET /Plugins/958aad66-3784-4d2a-b89a-a7b6fab6e25c/Configuration)"
+        - apply:
+            resource:
+              apiVersion: v1
+              kind: Secret
+              metadata:
+                name: kind-ldap-settings
+              stringData:
+                configuration.json: '{"LdapServer":"ldap.fixture.invalid","LdapBindPassword":"initial-fixture-password"}'
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginConfiguration
+              metadata:
+                name: ldap
+                annotations:
+                  crossplane.io/external-name: 958aad66-3784-4d2a-b89a-a7b6fab6e25c
+              spec:
+                managementPolicies: [Observe, Create, Update]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  configurationJsonSecretRef:
+                    name: kind-ldap-settings
+                    key: configuration.json
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              path=/Plugins/958aad66-3784-4d2a-b89a-a7b6fab6e25c/Configuration
+              expect 'LDAP bind configuration reconciled' "$path" '.LdapBindPassword == "initial-fixture-password"'
+              kubectl create secret generic kind-ldap-settings --namespace media --dry-run=client --output yaml \
+                  --from-literal=configuration.json='{"LdapBindPassword":"rotated-fixture-password"}' |
+                  kubectl apply --filename -
+              expect 'LDAP bind Secret rotation reconciled' "$path" '.LdapBindPassword == "rotated-fixture-password"'
+              check "$path" '.LdapServer == "ldap.fixture.invalid"' || {
+                  echo 'released LDAP setting was reset' >&2
+                  exit 1
+              }
+              check "$path" 'del(.LdapServer, .LdapBindPassword) == ($baseline | fromjson | del(.LdapServer, .LdapBindPassword))' \
+                  --arg baseline "$(recall ldap)" || {
+                  echo 'unmanaged LDAP settings changed' >&2
+                  exit 1
+              }
+    - name: drift-and-updates
+      try:
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              api POST /System/Configuration/branding \
+                  "$(api GET /System/Configuration/branding | jq '.LoginDisclaimer = "External drift"')"
+              expect 'branding drift was corrected' /System/Configuration/branding '.LoginDisclaimer == "Managed disclaimer"'
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: BrandingConfiguration
+              metadata:
+                name: branding
+              spec:
+                forProvider:
+                  loginDisclaimer: Updated disclaimer
+        - patch:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginRepository
+              metadata:
+                name: repository
+              spec:
+                forProvider:
+                  name: Renamed repository
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              expect 'branding update applied' /System/Configuration/branding '.LoginDisclaimer == "Updated disclaimer"'
+              expect 'repository update applied' /Repositories 'any(.Url == $url and .Name == "Renamed repository")' \
+                  --arg url http://jellyfin-fixture.media.svc.cluster.local:8096/disposable-catalog.json
+    - name: controller-restart
+      try:
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              revision=$(kubectl get provider jellyfin --output jsonpath='{.status.currentRevision}')
+              kubectl rollout restart --namespace crossplane-system "deployment/$revision"
+              kubectl rollout status --namespace crossplane-system "deployment/$revision" --timeout=90s
+              for resource in brandingconfiguration/branding networkingconfiguration/network pluginrepository/repository \
+                  library/library scheduledtask/task plugin/builtin-plugin scheduledtask/plugin-updates \
+                  plugin/ldap-plugin pluginconfiguration/ldap; do
+                  eventually "$resource reconciled after the restart" reconciled "$resource"
+              done
+              check /Library/VirtualFolders 'map(select(.Name == "Disposable library")) | .[0].ItemId == $id' \
+                  --arg id "$(recall library-id)"
+              path=/Plugins/958aad66-3784-4d2a-b89a-a7b6fab6e25c/Configuration
+              check "$path" '.LdapBindPassword == "rotated-fixture-password"' || {
+                  echo 'LDAP credential changed after the restart' >&2
+                  exit 1
+              }
+              check "$path" '.LdapServer == "ldap.fixture.invalid"' || {
+                  echo 'LDAP ownership changed after the restart' >&2
+                  exit 1
+              }
+    - name: orphan-adopt-delete
+      description: Removing a resource without Delete keeps the library; adoption keeps its identity;
+        Delete removes it.
+      try:
+        - delete:
+            ref:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Library
+              name: library
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              check /Library/VirtualFolders 'map(select(.Name == "Disposable library")) | .[0].ItemId == $id' \
+                  --arg id "$(recall library-id)"
+        - apply:
+            resource:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Library
+              metadata:
+                name: library
+                annotations:
+                  crossplane.io/external-name: Disposable library
+              spec:
+                managementPolicies: ["*"]
+                providerConfigRef:
+                  kind: ProviderConfig
+                  name: kind-fixture
+                forProvider:
+                  collectionType: movies
+                  paths: [/media]
+                  libraryOptions:
+                    enableRealtimeMonitor: false
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              eventually 'library adoption reconciled' reconciled library/library
+              check /Library/VirtualFolders 'map(select(.Name == "Disposable library")) | .[0].ItemId == $id' \
+                  --arg id "$(recall library-id)"
+        - delete:
+            ref:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: Library
+              name: library
+        - delete:
+            ref:
+              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              kind: PluginRepository
+              name: repository
+        - script:
+            shell: bash
+            content: |
+              source ./lib.sh
+              expect 'Delete removed the library' /Library/VirtualFolders 'any(.Name == "Disposable library") | not'
+              check /Repositories '. == ($baseline | fromjson)' --arg baseline "$(recall repositories)" || {
+                  echo 'repository deletion changed unrelated repositories' >&2
+                  exit 1
+              }
+              check /Users 'map([.Id, .Name]) == ($users | fromjson)' --arg users "$(recall users)"
