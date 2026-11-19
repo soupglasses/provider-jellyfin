@@ -18,7 +18,10 @@ type PluginInitParameters struct {
 	// The repository URL from which to install the plugin. Required when creating the resource and resolved automatically on import when the exact package version is still available.
 	RepositoryURL *string `json:"repositoryUrl,omitempty" tf:"repository_url,omitempty"`
 
-	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it reinstalls the plugin, replacing the resource, unless the installed version already satisfies the new value.
+	// Whether to restart Jellyfin when the version this resource installed waits for a restart to load, and wait until Jellyfin lists it as `Active`. A refresh that finds it still waiting plans the restart. Defaults to `false`.
+	Restart *bool `json:"restart,omitempty" tf:"restart,omitempty"`
+
+	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it installs the new version in place and uninstalls the others, unless the installed version already satisfies the new value.
 	Version *string `json:"version,omitempty" tf:"version,omitempty"`
 }
 
@@ -31,10 +34,13 @@ type PluginObservation struct {
 	// The repository URL from which to install the plugin. Required when creating the resource and resolved automatically on import when the exact package version is still available.
 	RepositoryURL *string `json:"repositoryUrl,omitempty" tf:"repository_url,omitempty"`
 
+	// Whether to restart Jellyfin when the version this resource installed waits for a restart to load, and wait until Jellyfin lists it as `Active`. A refresh that finds it still waiting plans the restart. Defaults to `false`.
+	Restart *bool `json:"restart,omitempty" tf:"restart,omitempty"`
+
 	// The status Jellyfin lists for `installed_version`: `Active` (loaded), `Restart` (waiting for a restart to load), `Superseded` (a newer version waits for a restart to replace it), `Disabled` (disabled on the dashboard's Plugins page), `NotSupported` (built for another Jellyfin version, so not loaded) or `Malfunctioned` (failed to load; the server log says why). Creating the resource fails if the version it installed is `NotSupported` or `Malfunctioned`, and the next apply replaces the tainted plugin.
 	Status *string `json:"status,omitempty" tf:"status,omitempty"`
 
-	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it reinstalls the plugin, replacing the resource, unless the installed version already satisfies the new value.
+	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it installs the new version in place and uninstalls the others, unless the installed version already satisfies the new value.
 	Version *string `json:"version,omitempty" tf:"version,omitempty"`
 }
 
@@ -44,7 +50,11 @@ type PluginParameters struct {
 	// +kubebuilder:validation:Optional
 	RepositoryURL *string `json:"repositoryUrl,omitempty" tf:"repository_url,omitempty"`
 
-	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it reinstalls the plugin, replacing the resource, unless the installed version already satisfies the new value.
+	// Whether to restart Jellyfin when the version this resource installed waits for a restart to load, and wait until Jellyfin lists it as `Active`. A refresh that finds it still waiting plans the restart. Defaults to `false`.
+	// +kubebuilder:validation:Optional
+	Restart *bool `json:"restart,omitempty" tf:"restart,omitempty"`
+
+	// The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it installs the new version in place and uninstalls the others, unless the installed version already satisfies the new value.
 	// +kubebuilder:validation:Optional
 	Version *string `json:"version,omitempty" tf:"version,omitempty"`
 }

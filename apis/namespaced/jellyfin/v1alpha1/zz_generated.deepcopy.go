@@ -2716,6 +2716,11 @@ func (in *PluginInitParameters) DeepCopyInto(out *PluginInitParameters) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Restart != nil {
+		in, out := &in.Restart, &out.Restart
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Version != nil {
 		in, out := &in.Version, &out.Version
 		*out = new(string)
@@ -2783,6 +2788,11 @@ func (in *PluginObservation) DeepCopyInto(out *PluginObservation) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.Restart != nil {
+		in, out := &in.Restart, &out.Restart
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Status != nil {
 		in, out := &in.Status, &out.Status
 		*out = new(string)
@@ -2811,6 +2821,11 @@ func (in *PluginParameters) DeepCopyInto(out *PluginParameters) {
 	if in.RepositoryURL != nil {
 		in, out := &in.RepositoryURL, &out.RepositoryURL
 		*out = new(string)
+		**out = **in
+	}
+	if in.Restart != nil {
+		in, out := &in.Restart, &out.Restart
+		*out = new(bool)
 		**out = **in
 	}
 	if in.Version != nil {
