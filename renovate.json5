@@ -34,7 +34,7 @@
         "/^tests/jellyfin-image\\.txt$/"
       ],
       "matchStrings": [
-        "(?<depName>ghcr.io/soupglasses/ops/jellyfin-runtime):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+        "(?<depName>docker.io/jellyfin/jellyfin):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
       ],
       "datasourceTemplate": "docker"
     }

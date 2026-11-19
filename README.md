@@ -21,7 +21,8 @@ would let this package use the ordinary repository module path.
 `config/provider.go` selects resources and stable external identifiers. Upjet
 generates the APIs and reconcilers; application behavior stays in the upstream
 Terraform provider. Plugin names and repository URLs remain external identifiers
-even though Jellyfin returns different IDs. Only namespaced APIs are installed.
+even though Jellyfin returns different IDs. A ScheduledTask without `triggers`, or
+with an empty list, removes every trigger of its task. Only namespaced APIs are installed.
 The controller watches one configured namespace and resolves credentials locally.
 
 ## Build and validation

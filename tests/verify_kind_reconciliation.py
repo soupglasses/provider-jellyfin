@@ -307,7 +307,7 @@ try:
     network_baseline = api(network_path)
     repos_baseline = api("/Repositories")
     repo_url = "http://jellyfin-fixture.media.svc.cluster.local:8096/disposable-catalog.json"
-    task = next(task for task in api("/ScheduledTasks") if not task["IsHidden"])
+    task = next(task for task in api("/ScheduledTasks") if not task["IsHidden"] and task["Key"] != "PluginUpdates")
     task_path = "/ScheduledTasks/" + task["Id"]
     resources = [
         managed("BrandingConfiguration", "branding", "branding", {"loginDisclaimer": "Managed disclaimer"}),
@@ -354,10 +354,30 @@ try:
         if key != setting:
             assert api(plugin_path)[key] == value, "unmanaged plugin configuration changed: " + key
 
-    # Use the same LDAP-Auth plugin as production and rotate its bind credential.
+    # Install the LDAP-Auth plugin as production does: pinned, without automatic updates,
+    # restarting Jellyfin to load each version.
     ldap_id = "958aad66-3784-4d2a-b89a-a7b6fab6e25c"
-    ldap = next(item for item in api("/Plugins") if uuid.UUID(item["Id"]) == uuid.UUID(ldap_id))
-    assert ldap["Status"] == "Active", "LDAP-Auth is not compatible with the runtime"
+
+    def ldap_versions():
+        return [(item["Version"], item["Status"]) for item in api("/Plugins")
+                if uuid.UUID(item["Id"]) == uuid.UUID(ldap_id) and item["Status"] != "Deleted"]
+
+    resources.append(managed("ScheduledTask", "plugin-updates", "PluginUpdates", {"triggers": []}))
+    eventually(lambda: reconciled("ScheduledTask", "plugin-updates"), "PluginUpdates triggers were not removed")
+    ldap_plugin = managed("Plugin", "ldap-plugin", "LDAP Authentication", {
+        "version": "23.0.0.0", "repositoryUrl": repos_baseline[0]["Url"], "restart": True,
+    })
+    resources.append(ldap_plugin)
+    eventually(lambda: fixture_ready() and ldap_versions() == [("23.0.0.0", "Active")],
+               "LDAP-Auth was not installed and loaded")
+    ldap_plugin["spec"]["forProvider"]["version"] = "24.0.0.0"
+    apply(ldap_plugin)
+    eventually(lambda: fixture_ready() and ldap_versions() == [("24.0.0.0", "Active")],
+               "LDAP-Auth was not updated in place")
+    eventually(lambda: reconciled("Plugin", "ldap-plugin"), "LDAP-Auth Plugin did not reconcile")
+    print("Verified Plugin install, in-place update and restart", flush=True)
+
+    # Rotate the LDAP-Auth bind credential.
     ldap_path = "/Plugins/" + ldap_id + "/Configuration"
     ldap_baseline = api(ldap_path)
     apply({"apiVersion": "v1", "kind": "Secret", "metadata": {"name": "kind-ldap-settings"},

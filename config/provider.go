@@ -35,6 +35,19 @@ func WithSchema(raw []byte, group string) *ujconfig.Provider {
 		field.Required, field.Optional = false, true
 		r.MarkAsRequired("configuration_json")
 	})
+	p.AddResourceConfigurator("jellyfin_scheduled_task", func(r *ujconfig.Resource) {
+		// The generated types store triggers: [] as a missing field, so a missing list
+		// removes every trigger instead of adopting the server's.
+		field := r.TerraformResource.Schema["triggers"]
+		field.Required, field.Optional = false, true
+		r.LateInitializer = ujconfig.LateInitializer{IgnoredFields: []string{"triggers"}}
+		r.TerraformConfigurationInjector = func(_ map[string]any, tfMap map[string]any) error {
+			if _, ok := tfMap["triggers"]; !ok {
+				tfMap["triggers"] = []any{}
+			}
+			return nil
+		}
+	})
 	for name, identifier := range map[string]string{
 		"plugin_configuration": "plugin_id", "plugin": "name", "plugin_repository": "url", "library": "name", "scheduled_task": "key",
 	} {

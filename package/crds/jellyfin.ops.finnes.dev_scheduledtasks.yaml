@@ -194,11 +194,6 @@ spec:
               required:
                 - forProvider
               type: object
-              x-kubernetes-validations:
-                - message: spec.forProvider.triggers is a required parameter
-                  rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
-                    ''Update'' in self.managementPolicies) || has(self.forProvider.triggers) || (has(self.initProvider)
-                    && has(self.initProvider.triggers))'
             status:
               description: ScheduledTaskStatus defines the observed state of ScheduledTask.
               properties:

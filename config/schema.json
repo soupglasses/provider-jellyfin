@@ -1744,6 +1744,14 @@
                 "sensitive": false,
                 "type": "string"
               },
+              "restart": {
+                "computed": false,
+                "description": "Whether to restart Jellyfin when the version this resource installed waits for a restart to load, and wait until Jellyfin lists it as `Active`. A refresh that finds it still waiting plans the restart. Defaults to `false`.",
+                "optional": true,
+                "required": false,
+                "sensitive": false,
+                "type": "bool"
+              },
               "status": {
                 "computed": true,
                 "description": "The status Jellyfin lists for `installed_version`: `Active` (loaded), `Restart` (waiting for a restart to load), `Superseded` (a newer version waits for a restart to replace it), `Disabled` (disabled on the dashboard's Plugins page), `NotSupported` (built for another Jellyfin version, so not loaded) or `Malfunctioned` (failed to load; the server log says why). Creating the resource fails if the version it installed is `NotSupported` or `Malfunctioned`, and the next apply replaces the tainted plugin.",
@@ -1754,7 +1762,7 @@
               },
               "version": {
                 "computed": true,
-                "description": "The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it reinstalls the plugin, replacing the resource, unless the installed version already satisfies the new value.",
+                "description": "The version to install, as the repository lists it (e.g. `13.0.0.0`), or `latest` (the newest offered) or `supported` (the Jellyfin Security release this provider was tested against). A keyword is resolved only at install or when set, stays in state as written, and accepts any version installed later. Omitted, it installs as `supported` for Jellyfin Security and `latest` otherwise, then tracks `installed_version`, as it also does after a keyword is removed. A version is a minimum while automatic plugin updates are on, else exact; see the resource description. Changing it installs the new version in place and uninstalls the others, unless the installed version already satisfies the new value.",
                 "optional": true,
                 "required": false,
                 "sensitive": false,

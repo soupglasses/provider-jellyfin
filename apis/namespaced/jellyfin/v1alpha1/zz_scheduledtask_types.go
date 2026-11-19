@@ -135,9 +135,8 @@ type ScheduledTaskStatus struct {
 type ScheduledTask struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.triggers) || (has(self.initProvider) && has(self.initProvider.triggers))",message="spec.forProvider.triggers is a required parameter"
-	Spec   ScheduledTaskSpec   `json:"spec"`
-	Status ScheduledTaskStatus `json:"status,omitempty"`
+	Spec              ScheduledTaskSpec   `json:"spec"`
+	Status            ScheduledTaskStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
