@@ -3,8 +3,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "github>soupglasses/renovate-configs#v0.1.0",
-    "github>soupglasses/renovate-configs:providers#v0.1.0"
+    "github>soupglasses/renovate-configs#v0.3.0",
+    "github>soupglasses/renovate-configs:providers#v0.3.0"
   ],
   "packageRules": [
     {
@@ -25,18 +25,6 @@
       ],
       "allowedVersions": "/-[0-9]{14}-[0-9a-f]{12}$/",
       "groupName": "Jellyfin Terraform fork"
-    }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^tests/jellyfin-image\\.txt$/"
-      ],
-      "matchStrings": [
-        "(?<depName>docker.io/jellyfin/jellyfin):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"
-      ],
-      "datasourceTemplate": "docker"
     }
   ]
 }
