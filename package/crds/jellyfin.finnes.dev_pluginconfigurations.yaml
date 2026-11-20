@@ -3,18 +3,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-  name: scheduledtasks.jellyfin.ops.finnes.dev
+  name: pluginconfigurations.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
       - managed
       - jellyfin
-    kind: ScheduledTask
-    listKind: ScheduledTaskList
-    plural: scheduledtasks
-    singular: scheduledtask
+    kind: PluginConfiguration
+    listKind: PluginConfigurationList
+    plural: pluginconfigurations
+    singular: pluginconfiguration
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
       name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: ScheduledTask is the Schema for the ScheduledTasks API. <no value>
+          description: PluginConfiguration is the Schema for the PluginConfigurations API. <no value>
           properties:
             apiVersion:
               description: |-
@@ -53,42 +53,23 @@ spec:
             metadata:
               type: object
             spec:
-              description: ScheduledTaskSpec defines the desired state of ScheduledTask
+              description: PluginConfigurationSpec defines the desired state of PluginConfiguration
               properties:
                 forProvider:
                   properties:
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
-                      type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
+                    configurationJsonSecretRef:
+                      description: A JSON object containing only the plugin settings to manage. Unspecified
+                        object keys are preserved; arrays are replaced whole.
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          description: Name of the secret.
+                          type: string
+                      required:
+                        - key
+                        - name
+                      type: object
                   type: object
                 initProvider:
                   description: |-
@@ -103,38 +84,19 @@ spec:
                     for example because of an external controller is managing them, like an
                     autoscaler.
                   properties:
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
-                      type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
+                    configurationJsonSecretRef:
+                      description: A JSON object containing only the plugin settings to manage. Unspecified
+                        object keys are preserved; arrays are replaced whole.
+                      properties:
+                        key:
+                          type: string
+                        name:
+                          description: Name of the secret.
+                          type: string
+                      required:
+                        - key
+                        - name
+                      type: object
                   type: object
                 managementPolicies:
                   default:
@@ -194,45 +156,23 @@ spec:
               required:
                 - forProvider
               type: object
+              x-kubernetes-validations:
+                - message: spec.forProvider.configurationJsonSecretRef is a required parameter
+                  rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
+                    ''Update'' in self.managementPolicies) || has(self.forProvider.configurationJsonSecretRef)
+                    || (has(self.initProvider) && has(self.initProvider.configurationJsonSecretRef))'
             status:
-              description: ScheduledTaskStatus defines the observed state of ScheduledTask.
+              description: PluginConfigurationStatus defines the observed state of PluginConfiguration.
               properties:
                 atProvider:
                   properties:
+                    configurationKeys:
+                      description: Owned object keys, derived from configuration_json. Nested objects
+                        retain their structure; arrays, scalars and null are represented by null. This
+                        read-only ownership record survives remote field removal and type changes.
+                      type: string
                     id:
                       type: string
-                    taskId:
-                      description: The task's ID, which Jellyfin derives from an MD5 hash of the full
-                        name of the .NET type that runs the task and matches ignoring case, such as `7738148ffcd07979c7ceb148e06b3aed`
-                        for *Scan Media Library*. Set `key`, `task_id`, or both naming the same task;
-                        with only `key` set, `task_id` reads the ID of the task the key selects.
-                      type: string
-                    triggers:
-                      items:
-                        properties:
-                          dayOfWeek:
-                            description: Day of the week the task runs (`Sunday` through `Saturday`).
-                              Required for `WeeklyTrigger`.
-                            type: string
-                          intervalTicks:
-                            description: Interval between runs, in ticks (100 ns). Required for `IntervalTrigger`.
-                            type: number
-                          maxRuntimeTicks:
-                            description: Maximum time the task may run before Jellyfin cancels it, in
-                              ticks (100 ns), from `0` to `42949672949999` (about 49.7 days). Jellyfin
-                              counts whole milliseconds, so a value below `10000` (1 ms), including `0`,
-                              cancels each run as soon as it starts; leave it unset for no limit.
-                            type: number
-                          timeOfDayTicks:
-                            description: Time of day the task runs, in ticks (100 ns) after midnight,
-                              from `0` to `863999999999`. Required for `DailyTrigger` and `WeeklyTrigger`.
-                            type: number
-                          type:
-                            description: The trigger type (`DailyTrigger`, `WeeklyTrigger`, `IntervalTrigger`,
-                              `StartupTrigger`).
-                            type: string
-                        type: object
-                      type: array
                   type: object
                 conditions:
                   description: Conditions of the resource.

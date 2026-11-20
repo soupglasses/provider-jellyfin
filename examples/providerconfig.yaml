@@ -8,7 +8,7 @@ metadata:
 stringData:
   password: replace-with-the-administrator-password
 ---
-apiVersion: jellyfin.ops.finnes.dev/v1beta1
+apiVersion: jellyfin.finnes.dev/v1beta1
 kind: ProviderConfig
 metadata:
   name: jellyfin

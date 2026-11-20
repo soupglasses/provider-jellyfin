@@ -41,7 +41,7 @@ func TestPluginConfigurationSecretAdmission(t *testing.T) {
 		t.Fatal("missing Secret validation")
 	}
 	rule := string(match[1])
-	raw, err := os.ReadFile("../../package/crds/jellyfin.ops.finnes.dev_pluginconfigurations.yaml")
+	raw, err := os.ReadFile("../../package/crds/jellyfin.finnes.dev_pluginconfigurations.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

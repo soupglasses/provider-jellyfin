@@ -3,18 +3,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.23.0
-  name: pluginconfigurations.jellyfin.ops.finnes.dev
+  name: brandingconfigurations.jellyfin.finnes.dev
 spec:
-  group: jellyfin.ops.finnes.dev
+  group: jellyfin.finnes.dev
   names:
     categories:
       - crossplane
       - managed
       - jellyfin
-    kind: PluginConfiguration
-    listKind: PluginConfigurationList
-    plural: pluginconfigurations
-    singular: pluginconfiguration
+    kind: BrandingConfiguration
+    listKind: BrandingConfigurationList
+    plural: brandingconfigurations
+    singular: brandingconfiguration
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -33,7 +33,7 @@ spec:
       name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: PluginConfiguration is the Schema for the PluginConfigurations API. <no value>
+          description: BrandingConfiguration is the Schema for the BrandingConfigurations API. <no value>
           properties:
             apiVersion:
               description: |-
@@ -53,23 +53,24 @@ spec:
             metadata:
               type: object
             spec:
-              description: PluginConfigurationSpec defines the desired state of PluginConfiguration
+              description: BrandingConfigurationSpec defines the desired state of BrandingConfiguration
               properties:
                 forProvider:
                   properties:
-                    configurationJsonSecretRef:
-                      description: A JSON object containing only the plugin settings to manage. Unspecified
-                        object keys are preserved; arrays are replaced whole.
-                      properties:
-                        key:
-                          type: string
-                        name:
-                          description: Name of the secret.
-                          type: string
-                      required:
-                        - key
-                        - name
-                      type: object
+                    customCss:
+                      description: Custom CSS content.
+                      type: string
+                    loginDisclaimer:
+                      description: The login disclaimer text.
+                      type: string
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
+                      type: string
                   type: object
                 initProvider:
                   description: |-
@@ -84,19 +85,20 @@ spec:
                     for example because of an external controller is managing them, like an
                     autoscaler.
                   properties:
-                    configurationJsonSecretRef:
-                      description: A JSON object containing only the plugin settings to manage. Unspecified
-                        object keys are preserved; arrays are replaced whole.
-                      properties:
-                        key:
-                          type: string
-                        name:
-                          description: Name of the secret.
-                          type: string
-                      required:
-                        - key
-                        - name
-                      type: object
+                    customCss:
+                      description: Custom CSS content.
+                      type: string
+                    loginDisclaimer:
+                      description: The login disclaimer text.
+                      type: string
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
+                      type: string
                   type: object
                 managementPolicies:
                   default:
@@ -156,22 +158,26 @@ spec:
               required:
                 - forProvider
               type: object
-              x-kubernetes-validations:
-                - message: spec.forProvider.configurationJsonSecretRef is a required parameter
-                  rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies ||
-                    ''Update'' in self.managementPolicies) || has(self.forProvider.configurationJsonSecretRef)
-                    || (has(self.initProvider) && has(self.initProvider.configurationJsonSecretRef))'
             status:
-              description: PluginConfigurationStatus defines the observed state of PluginConfiguration.
+              description: BrandingConfigurationStatus defines the observed state of BrandingConfiguration.
               properties:
                 atProvider:
                   properties:
-                    configurationKeys:
-                      description: Owned object keys, derived from configuration_json. Nested objects
-                        retain their structure; arrays, scalars and null are represented by null. This
-                        read-only ownership record survives remote field removal and type changes.
+                    customCss:
+                      description: Custom CSS content.
                       type: string
                     id:
+                      type: string
+                    loginDisclaimer:
+                      description: The login disclaimer text.
+                      type: string
+                    splashscreenEnabled:
+                      description: Whether the splash screen is enabled.
+                      type: boolean
+                    splashscreenLocation:
+                      description: The splash screen location. Jellyfin ignores a splash screen location
+                        in the branding configuration, so setting it is an error. The attribute will be
+                        removed in a future release.
                       type: string
                   type: object
                 conditions:
