@@ -76,4 +76,4 @@ func WithSchema(raw []byte, group string) *ujconfig.Provider {
 	return p
 }
 
-func Namespaced() *ujconfig.Provider { return WithSchema(providerSchema, "jellyfin.ops.finnes.dev") }
+func Namespaced() *ujconfig.Provider { return WithSchema(providerSchema, "jellyfin.finnes.dev") }

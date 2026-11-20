@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
 # SPDX-License-Identifier: MPL-2.0
-apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+apiVersion: jellyfin.finnes.dev/v1alpha1
 kind: BrandingConfiguration
 metadata:
   name: jellyfin

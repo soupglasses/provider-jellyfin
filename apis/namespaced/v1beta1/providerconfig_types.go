@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 
 // +kubebuilder:object:generate=true
-// +groupName=jellyfin.ops.finnes.dev
+// +groupName=jellyfin.finnes.dev
 package v1beta1
 
 import (
@@ -40,7 +40,7 @@ type ProviderConfigList struct {
 	Items           []ProviderConfig `json:"items"`
 }
 
-var SchemeBuilder = &scheme.Builder{GroupVersion: schema.GroupVersion{Group: "jellyfin.ops.finnes.dev", Version: "v1beta1"}}
+var SchemeBuilder = &scheme.Builder{GroupVersion: schema.GroupVersion{Group: "jellyfin.finnes.dev", Version: "v1beta1"}}
 var AddToScheme = SchemeBuilder.AddToScheme
 
 func init() { SchemeBuilder.Register(&ProviderConfig{}, &ProviderConfigList{}) }

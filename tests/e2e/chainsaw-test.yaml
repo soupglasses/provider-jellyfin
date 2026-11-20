@@ -36,14 +36,14 @@ spec:
               for verb in get list create update delete; do
                   expect_permission yes system:serviceaccount:crossplane-system:jellyfin-provider "$verb" secrets --all-namespaces
               done
-              for resource in secrets pluginconfigurations.jellyfin.ops.finnes.dev; do
+              for resource in secrets pluginconfigurations.jellyfin.finnes.dev; do
                   for verb in get list watch create update patch delete; do
                       expect_permission yes system:serviceaccount:crossplane-system:crossplane "$verb" "$resource" --namespace media
                   done
               done
               for resource in providerconfigs brandingconfigurations libraries networkingconfigurations \
                   pluginconfigurations pluginrepositories plugins scheduledtasks systemconfigurations; do
-                  scope=$(kubectl get crd "$resource.jellyfin.ops.finnes.dev" --output jsonpath='{.spec.scope}')
+                  scope=$(kubectl get crd "$resource.jellyfin.finnes.dev" --output jsonpath='{.spec.scope}')
                   if [[ $scope != Namespaced ]]; then
                       echo "expected namespaced $resource; got $scope" >&2
                       failed=1
@@ -89,7 +89,7 @@ spec:
                 password: disposable-kind-test-password
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1beta1
+              apiVersion: jellyfin.finnes.dev/v1beta1
               kind: ProviderConfig
               metadata:
                 name: kind-fixture
@@ -101,7 +101,7 @@ spec:
                   key: password
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: SystemConfiguration
               metadata:
                 name: kind-fixture
@@ -116,7 +116,7 @@ spec:
                   serverName: Fresh Crossplane instance
         - assert:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: SystemConfiguration
               metadata:
                 name: kind-fixture
@@ -143,7 +143,7 @@ spec:
       try:
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: SystemConfiguration
               metadata:
                 name: kind-fixture
@@ -166,7 +166,7 @@ spec:
       try:
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: SystemConfiguration
               metadata:
                 name: kind-fixture
@@ -208,7 +208,7 @@ spec:
                 configuration.json: "{}"
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginConfiguration
               metadata:
                 name: kind-plugin
@@ -225,7 +225,7 @@ spec:
                     key: configuration.json
         - assert:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginConfiguration
               metadata:
                 name: kind-plugin
@@ -266,7 +266,7 @@ spec:
                 value: (json_parse($stdout))
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: BrandingConfiguration
               metadata:
                 name: branding
@@ -281,7 +281,7 @@ spec:
                   loginDisclaimer: Managed disclaimer
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: NetworkingConfiguration
               metadata:
                 name: network
@@ -296,7 +296,7 @@ spec:
                   enablePublishedServerUriByRequest: ($values.publishedByRequest)
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginRepository
               metadata:
                 name: repository
@@ -312,7 +312,7 @@ spec:
                   enabled: false
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Library
               metadata:
                 name: library
@@ -330,7 +330,7 @@ spec:
                     enableRealtimeMonitor: false
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: ScheduledTask
               metadata:
                 name: task
@@ -347,7 +347,7 @@ spec:
                       intervalTicks: 864000000000
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Plugin
               metadata:
                 name: builtin-plugin
@@ -389,7 +389,7 @@ spec:
       try:
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginConfiguration
               metadata:
                 name: kind-plugin
@@ -422,7 +422,7 @@ spec:
       try:
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: ScheduledTask
               metadata:
                 name: plugin-updates
@@ -446,7 +446,7 @@ spec:
                 value: ($stdout)
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Plugin
               metadata:
                 name: ldap-plugin
@@ -469,7 +469,7 @@ spec:
                   '[.[] | select((.Id | gsub("-"; "")) == "958aad6637844d2ab89aa7b6fab6e25c" and .Status != "Deleted") | [.Version, .Status]] == [["23.0.0.0", "Active"]]'
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Plugin
               metadata:
                 name: ldap-plugin
@@ -502,7 +502,7 @@ spec:
                 configuration.json: '{"LdapServer":"ldap.fixture.invalid","LdapBindPassword":"initial-fixture-password"}'
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginConfiguration
               metadata:
                 name: ldap
@@ -547,7 +547,7 @@ spec:
               expect 'branding drift was corrected' /System/Configuration/branding '.LoginDisclaimer == "Managed disclaimer"'
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: BrandingConfiguration
               metadata:
                 name: branding
@@ -556,7 +556,7 @@ spec:
                   loginDisclaimer: Updated disclaimer
         - patch:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginRepository
               metadata:
                 name: repository
@@ -601,7 +601,7 @@ spec:
       try:
         - delete:
             ref:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Library
               name: library
         - script:
@@ -612,7 +612,7 @@ spec:
                   --arg id "$(recall library-id)"
         - apply:
             resource:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Library
               metadata:
                 name: library
@@ -637,12 +637,12 @@ spec:
                   --arg id "$(recall library-id)"
         - delete:
             ref:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: Library
               name: library
         - delete:
             ref:
-              apiVersion: jellyfin.ops.finnes.dev/v1alpha1
+              apiVersion: jellyfin.finnes.dev/v1alpha1
               kind: PluginRepository
               name: repository
         - script:
