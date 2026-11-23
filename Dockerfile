@@ -3,7 +3,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.23@sha256:f70850ef6ce341e8b6427f677049145d63c0b7ce002d4d7e3d464828b1b96dcd AS generate
 WORKDIR /src
 RUN apk add --no-cache bash && \
-    go install golang.org/x/tools/cmd/goimports@v0.52.0 && \
+    go install golang.org/x/tools/cmd/goimports@v0.53.0 && \
     go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.23.0 && \
     go install github.com/crossplane/crossplane-tools/cmd/angryjet@v0.0.0-20260719180100-659f1dc036c5 && \
     go install github.com/google/yamlfmt/cmd/yamlfmt@v0.21.0
