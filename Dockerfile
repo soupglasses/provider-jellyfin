@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Sofie Finnes <sofie+git@finnes.dev>
 # SPDX-License-Identifier: MPL-2.0
-FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.23@sha256:5d5113301ffcac84e2bfb20c42648803fecaea6789c89bb9b66884e18cbb30a7 AS generate
+FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.23@sha256:f70850ef6ce341e8b6427f677049145d63c0b7ce002d4d7e3d464828b1b96dcd AS generate
 WORKDIR /src
 RUN apk add --no-cache bash && \
     go install golang.org/x/tools/cmd/goimports@v0.52.0 && \
@@ -30,7 +30,7 @@ COPY --from=generate /src/internal/controller /internal/controller
 FROM scratch AS coverage
 COPY --from=unit-tests /tmp/coverage.out /coverage.out
 
-FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS certificates
+FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf AS certificates
 RUN apk add --no-cache ca-certificates
 
 FROM scratch AS runtime
